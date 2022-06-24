@@ -331,21 +331,6 @@ impl ConsensusWorker {
             info!("Started cycle {}", observed_cycle);
         }
 
-        // check if there are any final blocks not produced by us
-        // if none => we are probably desync
-        #[cfg(not(feature = "sandbox"))]
-        if now
-            > max(self.cfg.genesis_timestamp, self.launch_time)
-                .saturating_add(self.stats_desync_detection_timespan)
-            && !self.final_block_stats.iter().any(|(time, _, addr)| {
-                time > &now.saturating_sub(self.stats_desync_detection_timespan)
-                    && !self.staking_keys.contains_key(addr)
-            })
-        {
-            warn!("desynchronization detected because the recent final block history is empty or contains only blocks produced by this node");
-            let _ = self.send_consensus_event(ConsensusEvent::NeedSync).await;
-        }
-
         // signal tick to pool
         self.channels
             .pool_command_sender
