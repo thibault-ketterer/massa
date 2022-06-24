@@ -43,7 +43,7 @@ lazy_static::lazy_static! {
                 .saturating_add(MassaTime::from(1000 * 10))
         )
     } else {
-        1654704000000.into()
+        1656099000000.into()
     };
 
     /// TESTNET: time when the blockclique is ended.
