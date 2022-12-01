@@ -291,7 +291,7 @@ impl ConsensusState {
                 .map(|(_, p)| *p)
                 .collect();
             debug!(
-                "[CONSENSUS LIST REQUIRED]: retain_active = {}",
+                "[CONSENSUS LIST REQUIRED]: retain_active = {:?}",
                 retain_active
             );
             for retain_h in retain_active.iter() {
