@@ -142,8 +142,8 @@ impl ConsensusController for ConsensusControllerImpl {
         };
 
         debug!("[CONSENSUS BOOTSTRAP]: current_ids = {:?}", current_ids);
-        debug!("[CONSENSUS BOOTSTRAP]: previous_ids = {:?}", current_ids);
-        debug!("[CONSENSUS BOOTSTRAP]: outdated_ids = {:?}", current_ids);
+        debug!("[CONSENSUS BOOTSTRAP]: previous_ids = {:?}", previous_ids);
+        debug!("[CONSENSUS BOOTSTRAP]: outdated_ids = {:?}", outdated_ids);
 
         for b_id in &current_ids {
             if let Some(BlockStatus::Active { a_block, storage }) =
@@ -175,11 +175,6 @@ impl ConsensusController for ConsensusControllerImpl {
             retrieved_ids.extend(pruned_previous_ids);
             cursor = StreamingStep::Ongoing(retrieved_ids);
         }
-
-        debug!(
-            "[CONSENSUS BOOTSTRAP]: cursor after iteration = {:?}",
-            cursor
-        );
 
         Ok((BootstrapableGraph { final_blocks }, outdated_ids, cursor))
     }
