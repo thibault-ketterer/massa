@@ -180,7 +180,7 @@
 [bootstrap]
     # list of bootstrap (ip, node id)
     bootstrap_list = [
-        ["195.134.167.226:31245", "P125uhRvSzGmCKJGg8nF9DDegVeP6UZHsxqsbGwSiKUSUgsYG1Af"]
+        ["141.94.218.103:31245", "P1VRyXjUaHeJd4Rmr3waVmpZDFzzH5ARRi3f5ye5BYgxBmxHC7X"]
     ]
     # path to the bootstrap whitelist file. This whitelist define IPs that can bootstrap on your node.
     bootstrap_whitelist_file = "base_config/bootstrap_whitelist.json"
