@@ -176,7 +176,10 @@ impl ConsensusController for ConsensusControllerImpl {
             cursor = StreamingStep::Ongoing(retrieved_ids);
         }
 
-        debug!("[CONSENSUS BOOTSTRAP]: cursor after iteration = {:?}", cursor);
+        debug!(
+            "[CONSENSUS BOOTSTRAP]: cursor after iteration = {:?}",
+            cursor
+        );
 
         Ok((BootstrapableGraph { final_blocks }, outdated_ids, cursor))
     }
