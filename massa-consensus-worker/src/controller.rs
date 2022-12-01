@@ -16,7 +16,7 @@ use massa_models::{
 use massa_storage::Storage;
 use parking_lot::RwLock;
 use std::sync::{mpsc::SyncSender, Arc};
-use tracing::log::warn;
+use tracing::{debug, log::warn};
 
 use crate::{commands::ConsensusCommand, state::ConsensusState};
 
@@ -141,6 +141,10 @@ impl ConsensusController for ConsensusControllerImpl {
             }
         };
 
+        debug!("[CONSENSUS BOOTSTRAP]: current_ids = {:?}", current_ids);
+        debug!("[CONSENSUS BOOTSTRAP]: previous_ids = {:?}", current_ids);
+        debug!("[CONSENSUS BOOTSTRAP]: outdated_ids = {:?}", current_ids);
+
         for b_id in &current_ids {
             if let Some(BlockStatus::Active { a_block, storage }) =
                 read_shared_state.block_statuses.get(b_id)
@@ -171,6 +175,8 @@ impl ConsensusController for ConsensusControllerImpl {
             retrieved_ids.extend(pruned_previous_ids);
             cursor = StreamingStep::Ongoing(retrieved_ids);
         }
+
+        debug!("[CONSENSUS BOOTSTRAP]: cursor after iteration = {:?}", cursor);
 
         Ok((BootstrapableGraph { final_blocks }, outdated_ids, cursor))
     }
