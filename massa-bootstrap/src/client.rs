@@ -109,9 +109,10 @@ async fn stream_final_state_and_consensus(
                         // Extend the final blocks with the received part
                         graph.final_blocks.extend(consensus_part.final_blocks);
                         // Remove every outdated block
-                        graph.final_blocks.retain(|block_export| {
-                            !consensus_outdated_ids.contains(&block_export.block.id)
-                        });
+                        // IMPORTANT TODO: fix outdated ids computing in bootstrap server and re-enable this
+                        // graph.final_blocks.retain(|block_export| {
+                        //     !consensus_outdated_ids.contains(&block_export.block.id)
+                        // });
                     } else {
                         global_bootstrap_state.graph = Some(consensus_part);
                     }
