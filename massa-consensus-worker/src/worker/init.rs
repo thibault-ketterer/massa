@@ -180,11 +180,8 @@ impl ConsensusWorker {
                 .collect::<Result<_, ConsensusError>>()?;
 
             // compute latest_final_blocks_periods
-            let mut latest_final_blocks_periods: Vec<(BlockId, u64)> = genesis_block_ids
-                .iter()
-                .chain(genesis_block_ids.iter())
-                .map(|id| (*id, 0u64))
-                .collect();
+            let mut latest_final_blocks_periods: Vec<(BlockId, u64)> =
+                genesis_block_ids.iter().map(|id| (*id, 0u64)).collect();
             for (b, _) in &final_blocks {
                 if let Some(v) = latest_final_blocks_periods.get_mut(b.slot.thread as usize) {
                     if b.slot.period > v.1 {
@@ -220,11 +217,8 @@ impl ConsensusWorker {
             {
                 let mut write_shared_state = res_consensus.shared_state.write();
                 write_shared_state.active_index = genesis_block_ids.iter().copied().collect();
-                write_shared_state.latest_final_blocks_periods = genesis_block_ids
-                    .iter()
-                    .chain(genesis_block_ids.iter())
-                    .map(|h| (*h, 0))
-                    .collect();
+                write_shared_state.latest_final_blocks_periods =
+                    genesis_block_ids.iter().map(|h| (*h, 0)).collect();
                 write_shared_state.best_parents =
                     genesis_block_ids.iter().map(|v| (*v, 0)).collect();
                 write_shared_state.genesis_hashes = genesis_block_ids;

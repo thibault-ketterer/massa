@@ -199,15 +199,13 @@ impl ConsensusState {
         }
     }
 
-    pub fn list_required_active_blocks(
-        &self,
-        is_bootstrap: bool,
-    ) -> Result<PreHashSet<BlockId>, ConsensusError> {
+    pub fn list_required_active_blocks(&self) -> Result<PreHashSet<BlockId>, ConsensusError> {
         // list all active blocks
         let mut retain_active: PreHashSet<BlockId> =
             PreHashSet::<BlockId>::with_capacity(self.active_index.len());
 
-        let latest_final_blocks: Vec<BlockId> = self.latest_final_blocks_periods[0..31]
+        let latest_final_blocks: Vec<BlockId> = self
+            .latest_final_blocks_periods
             .iter()
             .map(|(hash, _)| *hash)
             .collect();
@@ -317,14 +315,6 @@ impl ConsensusState {
                     cursor = c_block.parents[thread as usize].0;
                 }
             }
-        }
-
-        if is_bootstrap {
-            retain_active.extend(
-                self.latest_final_blocks_periods[32..63]
-                    .iter()
-                    .map(|(hash, _)| *hash),
-            );
         }
 
         Ok(retain_active)

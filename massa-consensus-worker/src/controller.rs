@@ -116,7 +116,7 @@ impl ConsensusController for ConsensusControllerImpl {
         let mut retrieved_ids: PreHashSet<BlockId> = PreHashSet::default();
         let read_shared_state = self.shared_state.read();
         let required_blocks: PreHashSet<BlockId> =
-            read_shared_state.list_required_active_blocks(true)?;
+            read_shared_state.list_required_active_blocks()?;
 
         debug!(
             "[CONSENSUS BOOTSTRAP]: required_blocks = {:?}",

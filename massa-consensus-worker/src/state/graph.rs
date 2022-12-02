@@ -345,12 +345,9 @@ impl ConsensusState {
                     }];
                 }
                 // update latest final blocks
-                // HERE
                 if final_block.slot.period
                     > self.latest_final_blocks_periods[final_block.slot.thread as usize].1
                 {
-                    self.latest_final_blocks_periods[(final_block.slot.thread + 32) as usize] =
-                        self.latest_final_blocks_periods[final_block.slot.thread as usize];
                     self.latest_final_blocks_periods[final_block.slot.thread as usize] =
                         (block_id, final_block.slot.period);
                 }
