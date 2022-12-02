@@ -317,24 +317,6 @@ impl ConsensusState {
             }
         }
 
-        // retain extra history according to the config
-        // this is useful to avoid desync on temporary connection loss
-        for a_block in self.active_index.iter() {
-            if let Some(BlockStatus::Active {
-                a_block: active_block,
-                ..
-            }) = self.block_statuses.get(a_block)
-            {
-                let (_b_id, latest_final_period) =
-                    self.latest_final_blocks_periods[active_block.slot.thread as usize];
-                if active_block.slot.period
-                    >= latest_final_period.saturating_sub(self.config.force_keep_final_periods)
-                {
-                    retain_active.insert(*a_block);
-                }
-            }
-        }
-
         Ok(retain_active)
     }
 
