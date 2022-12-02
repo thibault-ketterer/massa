@@ -129,7 +129,7 @@ async fn stream_final_state_and_consensus(
                             .map(|b_export| b_export.block.id)
                             .collect(),
                     );
-                    debug!("[LOCAL CONSENSUS STEP]: {}", last_consensus_step);
+                    debug!("[LOCAL CONSENSUS STEP]: {:?}", last_consensus_step);
 
                     // Set new message in case of disconnection
                     *next_bootstrap_message = BootstrapClientMessage::AskBootstrapPart {
