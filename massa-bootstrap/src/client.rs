@@ -105,8 +105,8 @@ async fn stream_final_state_and_consensus(
                     write_final_state.slot = slot;
 
                     // Set consensus blocks
+                    debug!("[GRAPH PART SIZE]: {}", consensus_part.final_blocks.len());
                     debug!("[OUTDATED IDS SIZE]: {}", consensus_outdated_ids.len());
-                    debug!("[GRAPH PART]: {:?}", consensus_part.final_blocks);
                     if let Some(graph) = global_bootstrap_state.graph.as_mut() {
                         // Extend the final blocks with the received part
                         graph.final_blocks.extend(consensus_part.final_blocks);
@@ -129,6 +129,7 @@ async fn stream_final_state_and_consensus(
                             .map(|b_export| b_export.block.id)
                             .collect(),
                     );
+                    debug!("[LOCAL CONSENSUS STEP]: {}", last_consensus_step);
 
                     // Set new message in case of disconnection
                     *next_bootstrap_message = BootstrapClientMessage::AskBootstrapPart {
