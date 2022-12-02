@@ -236,6 +236,10 @@ impl ConsensusState {
         retain_active.extend(self.latest_final_blocks_periods.iter().map(|(h, _)| *h));
 
         for (thread, id) in latest_final_blocks.iter().enumerate() {
+            // LOL
+            if thread == 32 {
+                break;
+            }
             let mut current_block_id = *id;
             while let Some((current_block, _)) = self.get_full_active_block(&current_block_id) {
                 let parent_id = {
