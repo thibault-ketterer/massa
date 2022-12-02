@@ -96,10 +96,6 @@ async fn stream_final_state_and_consensus(
                                 false,
                             )?;
                         }
-                        debug!(
-                            "[EXECUTED OPS CHANGES SIZE]: {}",
-                            changes.executed_ops_changes.len()
-                        );
                         if !changes.executed_ops_changes.is_empty() {
                             write_final_state
                                 .executed_ops
@@ -109,8 +105,8 @@ async fn stream_final_state_and_consensus(
                     write_final_state.slot = slot;
 
                     // Set consensus blocks
-                    debug!("[GRAPH PART SIZE]: {}", consensus_part.final_blocks.len());
                     debug!("[OUTDATED IDS SIZE]: {}", consensus_outdated_ids.len());
+                    debug!("[GRAPH PART]: {:?}", consensus_part.final_blocks);
                     if let Some(graph) = global_bootstrap_state.graph.as_mut() {
                         // Extend the final blocks with the received part
                         graph.final_blocks.extend(consensus_part.final_blocks);

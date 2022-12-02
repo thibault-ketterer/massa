@@ -313,6 +313,7 @@ pub async fn stream_bootstrap_information(
     mut last_consensus_step: StreamingStep<PreHashSet<BlockId>>,
     write_timeout: Duration,
 ) -> Result<(), BootstrapError> {
+    debug!("[SERVER BOOTSTRAP]: new bootstrap stream started");
     loop {
         #[cfg(test)]
         {
