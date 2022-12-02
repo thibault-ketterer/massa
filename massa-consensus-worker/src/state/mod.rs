@@ -290,10 +290,6 @@ impl ConsensusState {
                 .iter()
                 .map(|(_, p)| *p)
                 .collect();
-            debug!(
-                "[CONSENSUS LIST REQUIRED]: retain_active = {:?}",
-                retain_active
-            );
             for retain_h in retain_active.iter() {
                 let retain_slot = &self
                     .get_full_active_block(retain_h)

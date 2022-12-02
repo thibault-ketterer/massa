@@ -118,6 +118,11 @@ impl ConsensusController for ConsensusControllerImpl {
         let required_blocks: PreHashSet<BlockId> =
             read_shared_state.list_required_active_blocks()?;
 
+        debug!(
+            "[CONSENSUS BOOTSTRAP]: required_blocks = {:?}",
+            required_blocks
+        );
+
         let (current_ids, previous_ids, outdated_ids) = match cursor {
             StreamingStep::Started => (
                 required_blocks,
