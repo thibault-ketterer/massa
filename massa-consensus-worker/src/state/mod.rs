@@ -280,10 +280,13 @@ impl ConsensusState {
             for retain_h in retain_clone.into_iter() {
                 retain_active.extend(
                     self.get_full_active_block(&retain_h)
-                        .ok_or_else(|| ConsensusError::ContainerInconsistency(format!("inconsistency inside block statuses pruning and retaining the parents of the selected blocks - {} is missing", retain_h)))?
-                        .0.parents
-                        .iter()
-                        .map(|(b_id, _p)| *b_id),
+                        .map(|v| {
+                            v.0.parents
+                                .iter()
+                                .map(|(b_id, _p)| *b_id)
+                                .collect::<PreHashSet<BlockId>>()
+                        })
+                        .unwrap_or_default(),
                 )
             }
 
