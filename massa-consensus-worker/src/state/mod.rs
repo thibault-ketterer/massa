@@ -199,7 +199,10 @@ impl ConsensusState {
         }
     }
 
-    pub fn list_required_active_blocks(&self) -> Result<PreHashSet<BlockId>, ConsensusError> {
+    pub fn list_required_active_blocks(
+        &self,
+        is_bootstrap: bool,
+    ) -> Result<PreHashSet<BlockId>, ConsensusError> {
         // list all active blocks
         let mut retain_active: PreHashSet<BlockId> =
             PreHashSet::<BlockId>::with_capacity(self.active_index.len());
@@ -268,8 +271,10 @@ impl ConsensusState {
             }
         }
 
+        let cool_upper_bound = if is_bootstrap { 6 } else { 2 };
+
         // grow with parents & fill thread holes twice
-        for _ in 0..2 {
+        for _ in 0..cool_upper_bound {
             // retain the parents of the selected blocks
             let retain_clone = retain_active.clone();
 
