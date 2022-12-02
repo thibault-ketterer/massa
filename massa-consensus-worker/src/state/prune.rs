@@ -17,25 +17,7 @@ impl ConsensusState {
     /// prune active blocks and return final blocks, return discarded final blocks
     fn prune_active(&mut self) -> Result<PreHashMap<BlockId, ActiveBlock>, ConsensusError> {
         // list required active blocks
-        let mut retain_active: PreHashSet<BlockId> = self.list_required_active_blocks()?;
-
-        // retain extra history according to the config
-        // this is useful to avoid desync on temporary connection loss
-        for a_block in self.active_index.iter() {
-            if let Some(BlockStatus::Active {
-                a_block: active_block,
-                ..
-            }) = self.block_statuses.get(a_block)
-            {
-                let (_b_id, latest_final_period) =
-                    self.latest_final_blocks_periods[active_block.slot.thread as usize];
-                if active_block.slot.period
-                    >= latest_final_period.saturating_sub(self.config.force_keep_final_periods)
-                {
-                    retain_active.insert(*a_block);
-                }
-            }
-        }
+        let retain_active: PreHashSet<BlockId> = self.list_required_active_blocks()?;
 
         // remove unused final active blocks
         let mut discarded_finals: PreHashMap<BlockId, ActiveBlock> = PreHashMap::default();
