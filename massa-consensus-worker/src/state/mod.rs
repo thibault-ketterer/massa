@@ -199,13 +199,15 @@ impl ConsensusState {
         }
     }
 
-    pub fn list_required_active_blocks(&self) -> Result<PreHashSet<BlockId>, ConsensusError> {
+    pub fn list_required_active_blocks(
+        &self,
+        is_bootstrap: bool,
+    ) -> Result<PreHashSet<BlockId>, ConsensusError> {
         // list all active blocks
         let mut retain_active: PreHashSet<BlockId> =
             PreHashSet::<BlockId>::with_capacity(self.active_index.len());
 
-        let latest_final_blocks: Vec<BlockId> = self
-            .latest_final_blocks_periods
+        let latest_final_blocks: Vec<BlockId> = self.latest_final_blocks_periods[0..31]
             .iter()
             .map(|(hash, _)| *hash)
             .collect();
@@ -236,10 +238,6 @@ impl ConsensusState {
         retain_active.extend(self.latest_final_blocks_periods.iter().map(|(h, _)| *h));
 
         for (thread, id) in latest_final_blocks.iter().enumerate() {
-            // LOL
-            if thread == 32 {
-                break;
-            }
             let mut current_block_id = *id;
             while let Some((current_block, _)) = self.get_full_active_block(&current_block_id) {
                 let parent_id = {
@@ -280,13 +278,10 @@ impl ConsensusState {
             for retain_h in retain_clone.into_iter() {
                 retain_active.extend(
                     self.get_full_active_block(&retain_h)
-                        .map(|v| {
-                            v.0.parents
-                                .iter()
-                                .map(|(b_id, _p)| *b_id)
-                                .collect::<PreHashSet<BlockId>>()
-                        })
-                        .unwrap_or_default(),
+                        .ok_or_else(|| ConsensusError::ContainerInconsistency(format!("inconsistency inside block statuses pruning and retaining the parents of the selected blocks - {} is missing", retain_h)))?
+                        .0.parents
+                        .iter()
+                        .map(|(b_id, _p)| *b_id),
                 )
             }
 
@@ -322,6 +317,14 @@ impl ConsensusState {
                     cursor = c_block.parents[thread as usize].0;
                 }
             }
+        }
+
+        if is_bootstrap {
+            retain_active.extend(
+                self.latest_final_blocks_periods[32..63]
+                    .iter()
+                    .map(|(hash, _)| *hash),
+            );
         }
 
         Ok(retain_active)
