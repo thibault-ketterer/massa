@@ -260,6 +260,7 @@ impl BootstrapServer {
 
                         bootstrap_sessions.push(async move {
                             let mut server = BootstrapServerBinder::new(dplx, keypair, config.max_bytes_read_write, config.max_bootstrap_message_size, config.thread_count, config.max_datastore_key_length, config.randomness_size_bytes, config.consensus_bootstrap_part_size);
+                            debug!("entering bootstrap management, peer: {}", remote_addr);
                             match manage_bootstrap(&config, &mut server, data_execution, version, consensus_command_sender, network_command_sender).await {
                                 Ok(_) => {
                                     info!("bootstrapped peer {}", remote_addr)
