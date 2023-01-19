@@ -9,7 +9,7 @@ pub use error::WalletError;
 
 use massa_cipher::{decrypt, encrypt};
 use massa_hash::Hash;
-use massa_models::address::Address;
+use massa_models::address::{Address, UserAddress};
 use massa_models::composite::PubkeySig;
 use massa_models::operation::{Operation, OperationSerializer, SecureShareOperation};
 use massa_models::prehash::{PreHashMap, PreHashSet};
@@ -79,7 +79,7 @@ impl Wallet {
         let mut changed = false;
         let mut addrs = Vec::with_capacity(keys.len());
         for key in keys {
-            let addr = Address::from_public_key(&key.get_public_key());
+            let addr = *UserAddress::from_public_key(&key.get_public_key());
             if self.keys.try_insert(addr, key).is_ok() {
                 changed = true;
             }

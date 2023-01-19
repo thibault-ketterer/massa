@@ -1,6 +1,9 @@
 use std::fmt::Display;
 
-use crate::{address::Address, error::ModelsError};
+use crate::{
+    address::{Address, UserAddress},
+    error::ModelsError,
+};
 use massa_hash::Hash;
 use massa_serialization::{Deserializer, SerializeError, Serializer};
 use massa_signature::{
@@ -70,11 +73,11 @@ where
         hash_data.extend(public_key.to_bytes());
         hash_data.extend(content_serialized.clone());
         let hash = Hash::compute_from(&hash_data);
-        let creator_address = Address::from_public_key(&public_key);
+        let creator_address = UserAddress::from_public_key(&public_key);
         Ok(SecureShare {
             signature: keypair.sign(&hash)?,
             content_creator_pub_key: public_key,
-            content_creator_address: creator_address,
+            content_creator_address: *creator_address,
             content,
             serialized_data: content_serialized,
             id: ID::new(hash),
@@ -134,7 +137,7 @@ where
             // Avoid getting the rest of the data in the serialized data
             serialized_data[..serialized_data.len() - rest.len()].to_vec()
         };
-        let creator_address = Address::from_public_key(&creator_public_key);
+        let creator_address = UserAddress::from_public_key(&creator_public_key);
         let mut serialized_full_data = creator_public_key.to_bytes().to_vec();
         serialized_full_data.extend(&content_serialized);
         Ok((
@@ -143,7 +146,7 @@ where
                 content,
                 signature,
                 content_creator_pub_key: creator_public_key,
-                content_creator_address: creator_address,
+                content_creator_address: *creator_address,
                 serialized_data: content_serialized.to_vec(),
                 id: ID::new(Hash::compute_from(&serialized_full_data)),
             },

@@ -10,7 +10,7 @@ use massa_consensus_exports::{
 use massa_logging::massa_trace;
 use massa_models::{
     active_block::ActiveBlock,
-    address::Address,
+    address::UserAddress,
     block_header::SecuredHeader,
     block_id::BlockId,
     clique::Clique,
@@ -504,7 +504,7 @@ impl ConsensusState {
             add_block_id,
             BlockStatus::Active {
                 a_block: Box::new(ActiveBlock {
-                    creator_address: Address::from_public_key(&add_block_creator),
+                    creator_address: *UserAddress::from_public_key(&add_block_creator),
                     parents: parents_hash_period.clone(),
                     descendants: PreHashSet::<BlockId>::default(),
                     block_id: add_block_id,

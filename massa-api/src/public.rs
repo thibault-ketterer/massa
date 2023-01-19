@@ -22,8 +22,8 @@ use massa_consensus_exports::ConsensusController;
 use massa_execution_exports::{
     ExecutionController, ExecutionStackElement, ReadOnlyExecutionRequest, ReadOnlyExecutionTarget,
 };
-use massa_models::operation::OperationDeserializer;
 use massa_models::secure_share::SecureShareDeserializer;
+use massa_models::{address::UserAddress, operation::OperationDeserializer};
 use massa_models::{
     block::{Block, BlockGraphStatus},
     endorsement::SecureShareEndorsement,
@@ -137,7 +137,7 @@ impl MassaRpcServer for API<Public> {
         {
             let address = address.unwrap_or_else(|| {
                 // if no addr provided, use a random one
-                Address::from_public_key(&KeyPair::generate().get_public_key())
+                *UserAddress::from_public_key(&KeyPair::generate().get_public_key())
             });
 
             let op_datastore = match operation_datastore {
@@ -225,7 +225,7 @@ impl MassaRpcServer for API<Public> {
         {
             let caller_address = caller_address.unwrap_or_else(|| {
                 // if no addr provided, use a random one
-                Address::from_public_key(&KeyPair::generate().get_public_key())
+                *UserAddress::from_public_key(&KeyPair::generate().get_public_key())
             });
 
             // TODO:
@@ -821,7 +821,7 @@ impl MassaRpcServer for API<Public> {
             res.push(AddressInfo {
                 // general address info
                 address,
-                thread: address.get_thread(self.0.api_settings.thread_count),
+                thread: UserAddress(address).get_thread(self.0.api_settings.thread_count),
 
                 // final execution info
                 final_balance: execution_infos.final_balance,

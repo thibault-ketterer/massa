@@ -501,7 +501,7 @@ impl Interface for InterfaceImpl {
     /// The string representation of the resulting address
     fn address_from_public_key(&self, public_key: &str) -> Result<String> {
         let public_key = massa_signature::PublicKey::from_str(public_key)?;
-        let addr = massa_models::address::Address::from_public_key(&public_key);
+        let addr = massa_models::address::UserAddress::from_public_key(&public_key);
         Ok(addr.to_string())
     }
 

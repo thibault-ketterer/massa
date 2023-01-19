@@ -196,7 +196,7 @@ fn test_nested_call_gas_usage() {
     let balance = sample_state
         .read()
         .ledger
-        .get_balance(&Address::from_public_key(&keypair.get_public_key()))
+        .get_balance(&UserAddress::from_public_key(&keypair.get_public_key()))
         .unwrap();
 
     let exec_cost = exec_cfg

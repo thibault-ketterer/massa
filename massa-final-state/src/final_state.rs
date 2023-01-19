@@ -337,12 +337,15 @@ mod tests {
     use crate::StateChanges;
     use massa_async_pool::test_exports::get_random_message;
     use massa_ledger_exports::SetUpdateOrDelete;
-    use massa_models::{address::Address, slot::Slot};
+    use massa_models::{
+        address::{Address, UserAddress},
+        slot::Slot,
+    };
     use massa_signature::KeyPair;
 
     fn get_random_address() -> Address {
         let keypair = KeyPair::generate();
-        Address::from_public_key(&keypair.get_public_key())
+        *UserAddress::from_public_key(&keypair.get_public_key())
     }
 
     #[test]

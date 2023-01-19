@@ -24,7 +24,7 @@ use massa_final_state::{FinalState, FinalStateConfig};
 use massa_ledger_exports::LedgerConfig;
 use massa_ledger_worker::FinalLedger;
 use massa_logging::massa_trace;
-use massa_models::address::Address;
+use massa_models::address::UserAddress;
 use massa_models::config::constants::{
     ASYNC_POOL_BOOTSTRAP_PART_SIZE, BLOCK_REWARD, BOOTSTRAP_RANDOMNESS_SIZE_BYTES, CHANNEL_SIZE,
     DEFERRED_CREDITS_BOOTSTRAP_PART_SIZE, DELTA_F0, ENDORSEMENT_COUNT, END_TIMESTAMP,
@@ -153,7 +153,7 @@ async fn launch(
         thread_count: THREAD_COUNT,
         endorsement_count: ENDORSEMENT_COUNT,
         periods_per_cycle: PERIODS_PER_CYCLE,
-        genesis_address: Address::from_public_key(&GENESIS_KEY.get_public_key()),
+        genesis_address: *UserAddress::from_public_key(&GENESIS_KEY.get_public_key()),
     })
     .expect("could not start selector worker");
 

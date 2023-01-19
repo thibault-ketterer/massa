@@ -9,7 +9,6 @@ use massa_api_exports::{
     execution::{ReadOnlyBytecodeExecution, ReadOnlyCall},
     operation::OperationInput,
 };
-use massa_models::node::NodeId;
 use massa_models::prehash::PreHashMap;
 use massa_models::timeslots::get_current_latest_block_slot;
 use massa_models::{
@@ -21,6 +20,7 @@ use massa_models::{
     operation::{Operation, OperationId, OperationType},
     slot::Slot,
 };
+use massa_models::{address::UserAddress, node::NodeId};
 use massa_sdk::Client;
 use massa_signature::KeyPair;
 use massa_time::MassaTime;
@@ -1380,7 +1380,7 @@ async fn send_operation(
     let slot = get_current_latest_block_slot(cfg.thread_count, cfg.t0, cfg.genesis_timestamp)?
         .unwrap_or_else(|| Slot::new(0, 0));
     let mut expire_period = slot.period + cfg.operation_validity_periods;
-    if slot.thread >= addr.get_thread(cfg.thread_count) {
+    if slot.thread >= UserAddress(addr).get_thread(cfg.thread_count) {
         expire_period += 1;
     };
 

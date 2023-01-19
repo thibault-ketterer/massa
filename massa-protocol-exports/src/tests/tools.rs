@@ -3,11 +3,11 @@
 use super::mock_network_controller::MockNetworkController;
 use crate::ProtocolConfig;
 use massa_hash::Hash;
+use massa_models::address::UserAddress;
 use massa_models::node::NodeId;
 use massa_models::operation::OperationSerializer;
 use massa_models::secure_share::SecureShareContent;
 use massa_models::{
-    address::Address,
     amount::Amount,
     block::{Block, BlockSerializer, SecureShareBlock},
     block_header::{BlockHeader, BlockHeaderSerializer},
@@ -183,7 +183,7 @@ pub fn create_operation_with_expire_period(
     let recv_keypair = KeyPair::generate();
 
     let op = OperationType::Transaction {
-        recipient_address: Address::from_public_key(&recv_keypair.get_public_key()),
+        recipient_address: *UserAddress::from_public_key(&recv_keypair.get_public_key()),
         amount: Amount::default(),
     };
     let content = Operation {

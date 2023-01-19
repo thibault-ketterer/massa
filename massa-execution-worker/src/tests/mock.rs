@@ -2,6 +2,7 @@ use massa_final_state::{FinalState, FinalStateConfig};
 use massa_ledger_exports::LedgerEntry;
 use massa_ledger_exports::{LedgerConfig, LedgerController, LedgerError};
 use massa_ledger_worker::FinalLedger;
+use massa_models::address::UserAddress;
 use massa_models::{address::Address, amount::Amount, config::THREAD_COUNT};
 use massa_pos_exports::SelectorConfig;
 use massa_pos_worker::start_selector_worker;
@@ -40,7 +41,7 @@ fn get_initials() -> (NamedTempFile, HashMap<Address, LedgerEntry>) {
     // thread 0 / 31
     let keypair_0 =
         KeyPair::from_str("S1JJeHiZv1C1zZN5GLFcbz6EXYiccmUPLkYuDFA3kayjxP39kFQ").unwrap();
-    let addr_0 = Address::from_public_key(&keypair_0.get_public_key());
+    let addr_0 = UserAddress::from_public_key(&keypair_0.get_public_key());
     rolls.insert(addr_0, 100);
     ledger.insert(
         addr_0,
@@ -53,7 +54,7 @@ fn get_initials() -> (NamedTempFile, HashMap<Address, LedgerEntry>) {
     // thread 1 / 31
     let keypair_1 =
         KeyPair::from_str("S1kEBGgxHFBdsNC4HtRHhsZsB5irAtYHEmuAKATkfiomYmj58tm").unwrap();
-    let addr_1 = Address::from_public_key(&keypair_1.get_public_key());
+    let addr_1 = UserAddress::from_public_key(&keypair_1.get_public_key());
     rolls.insert(addr_1, 100);
     ledger.insert(
         addr_1,
@@ -66,7 +67,7 @@ fn get_initials() -> (NamedTempFile, HashMap<Address, LedgerEntry>) {
     // thread 2 / 31
     let keypair_2 =
         KeyPair::from_str("S12APSAzMPsJjVGWzUJ61ZwwGFTNapA4YtArMKDyW4edLu6jHvCr").unwrap();
-    let addr_2 = Address::from_public_key(&keypair_2.get_public_key());
+    let addr_2 = UserAddress::from_public_key(&keypair_2.get_public_key());
     rolls.insert(addr_2, 100);
     ledger.insert(
         addr_2,
@@ -79,8 +80,8 @@ fn get_initials() -> (NamedTempFile, HashMap<Address, LedgerEntry>) {
     // thread 3 / 31
     let keypair_3 =
         KeyPair::from_str("S12onbtxzgHcDSrVMp9bzP1cUjno8V5hZd4yYiqaMmC3nq4z7fSv").unwrap();
-    let addr_3 = Address::from_public_key(&keypair_3.get_public_key());
-    rolls.insert(addr_3, 100);
+    let addr_3 = UserAddress::from_public_key(&keypair_3.get_public_key());
+    rolls.insert(*addr_3, 100);
     ledger.insert(
         addr_3,
         LedgerEntry {
@@ -104,7 +105,10 @@ fn get_initials() -> (NamedTempFile, HashMap<Address, LedgerEntry>) {
 #[cfg(feature = "testing")]
 pub fn get_random_address_full() -> (Address, KeyPair) {
     let keypair = KeyPair::generate();
-    (Address::from_public_key(&keypair.get_public_key()), keypair)
+    (
+        UserAddress::from_public_key(&keypair.get_public_key()),
+        keypair,
+    )
 }
 
 pub fn get_sample_state() -> Result<(Arc<RwLock<FinalState>>, NamedTempFile, TempDir), LedgerError>

@@ -1,5 +1,5 @@
 use massa_models::{
-    address::Address,
+    address::{Address, UserAddress},
     amount::Amount,
     operation::{OperationId, SecureShareOperation},
 };
@@ -52,7 +52,7 @@ impl OperationInfo {
             max_gas: op.get_gas_usage(),
             creator_address: op.content_creator_address,
             fee: op.content.fee,
-            thread: op.content_creator_address.get_thread(thread_count),
+            thread: UserAddress(op.content_creator_address).get_thread(thread_count),
             validity_period_range: op.get_validity_range(operation_validity_periods),
             max_spending: op.get_max_spending(roll_price),
         }

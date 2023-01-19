@@ -10,12 +10,92 @@ use massa_signature::PublicKey;
 use nom::error::{context, ContextError, ParseError};
 use nom::{IResult, Parser};
 use serde::{Deserialize, Serialize};
-use std::ops::Bound::Included;
+use std::ops::{Bound::Included, Deref};
 use std::str::FromStr;
 
 /// Size of a serialized address, in bytes
 pub const ADDRESS_SIZE_BYTES: usize = massa_hash::HASH_SIZE_BYTES;
 
+/// Distinguishes an `Address` as one that is thread-specific
+#[derive(Debug, Clone, Copy, Eq, Hash, Ord, PartialEq, PartialOrd)]
+pub struct UserAddress(pub Address);
+
+impl std::fmt::Display for UserAddress {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        self.0.fmt(f)
+    }
+}
+
+impl UserAddress {
+    /// Computes address associated with given public key
+    pub fn from_public_key(public_key: &PublicKey) -> Self {
+        Self(Address(Hash::compute_from(public_key.to_bytes())))
+    }
+    /// Gets the associated thread. Depends on the `thread_count`
+    pub fn get_thread(&self, thread_count: u8) -> u8 {
+        (self.0.to_bytes()[0])
+            .checked_shr(8 - thread_count.trailing_zeros())
+            .unwrap_or(0)
+    }
+}
+impl PreHashed for UserAddress {}
+impl From<SCAddress> for UserAddress {
+    fn from(value: SCAddress) -> Self {
+        Self(value.0)
+    }
+}
+
+impl Deref for UserAddress {
+    type Target = Address;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+impl<'de> ::serde::Deserialize<'de> for UserAddress {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        let res = Address::deserialize(deserializer)?;
+        Ok(Self(res))
+    }
+}
+impl ::serde::Serialize for UserAddress {
+    fn serialize<S: ::serde::Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
+        self.0.serialize(s)
+    }
+}
+/// Distinguishes an `Address` as one that is not thread-specific.
+#[derive(Debug, Clone, Copy, Eq, Hash, Ord, PartialEq, PartialOrd)]
+pub struct SCAddress(pub Address);
+impl Deref for SCAddress {
+    type Target = Address;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+impl From<UserAddress> for SCAddress {
+    fn from(value: UserAddress) -> Self {
+        Self(value.0)
+    }
+}
+impl<'de> ::serde::Deserialize<'de> for SCAddress {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        let res = Address::deserialize(deserializer)?;
+        Ok(Self(res))
+    }
+}
+impl ::serde::Serialize for SCAddress {
+    fn serialize<S: ::serde::Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
+        self.0.serialize(s)
+    }
+}
+impl PreHashed for SCAddress {}
 /// Derived from a public key
 #[derive(Clone, Copy, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub struct Address(pub Hash);
@@ -154,7 +234,7 @@ fn test_address_str_format() {
     use massa_signature::KeyPair;
 
     let keypair = KeyPair::generate();
-    let address = Address::from_public_key(&keypair.get_public_key());
+    let address = UserAddress::from_public_key(&keypair.get_public_key());
     let a = address.to_string();
     let b = Address::from_str(&a).unwrap();
     assert!(address == b);
@@ -163,18 +243,6 @@ fn test_address_str_format() {
 impl PreHashed for Address {}
 
 impl Address {
-    /// Gets the associated thread. Depends on the `thread_count`
-    pub fn get_thread(&self, thread_count: u8) -> u8 {
-        (self.to_bytes()[0])
-            .checked_shr(8 - thread_count.trailing_zeros())
-            .unwrap_or(0)
-    }
-
-    /// Computes address associated with given public key
-    pub fn from_public_key(public_key: &PublicKey) -> Self {
-        Address(Hash::compute_from(public_key.to_bytes()))
-    }
-
     /// ## Example
     /// ```rust
     /// # use massa_signature::{PublicKey, KeyPair, Signature};

@@ -5,7 +5,7 @@ use massa_consensus_exports::{
 use massa_hash::Hash;
 use massa_models::{
     active_block::ActiveBlock,
-    address::Address,
+    address::UserAddress,
     block::{Block, BlockSerializer, SecureShareBlock},
     block_header::{BlockHeader, BlockHeaderSerializer},
     block_id::BlockId,
@@ -149,7 +149,7 @@ impl ConsensusWorker {
         }
 
         // add genesis blocks to stats
-        let genesis_addr = Address::from_public_key(&config.genesis_key.get_public_key());
+        let genesis_addr = UserAddress::from_public_key(&config.genesis_key.get_public_key());
         let mut final_block_stats = VecDeque::new();
         for thread in 0..config.thread_count {
             final_block_stats.push_back((
@@ -159,7 +159,7 @@ impl ConsensusWorker {
                     config.genesis_timestamp,
                     Slot::new(0, thread),
                 )?,
-                genesis_addr,
+                *genesis_addr,
                 false,
             ))
         }

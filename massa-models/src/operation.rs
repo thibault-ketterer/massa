@@ -1,5 +1,6 @@
 // Copyright (c) 2022 MASSA LABS <info@massa.net>
 
+use crate::address::UserAddress;
 use crate::datastore::{Datastore, DatastoreDeserializer, DatastoreSerializer};
 use crate::prehash::{PreHashSet, PreHashed};
 use crate::secure_share::{
@@ -817,8 +818,8 @@ impl SecureShareOperation {
     /// get the addresses that are involved in this operation from a ledger point of view
     pub fn get_ledger_involved_addresses(&self) -> PreHashSet<Address> {
         let mut res = PreHashSet::<Address>::default();
-        let emitter_address = Address::from_public_key(&self.content_creator_pub_key);
-        res.insert(emitter_address);
+        let emitter_address = UserAddress::from_public_key(&self.content_creator_pub_key);
+        res.insert(*emitter_address);
         match &self.content.op {
             OperationType::Transaction {
                 recipient_address, ..
@@ -856,10 +857,10 @@ impl SecureShareOperation {
         match self.content.op {
             OperationType::Transaction { .. } => {}
             OperationType::RollBuy { .. } => {
-                res.insert(Address::from_public_key(&self.content_creator_pub_key));
+                res.insert(*UserAddress::from_public_key(&self.content_creator_pub_key));
             }
             OperationType::RollSell { .. } => {
-                res.insert(Address::from_public_key(&self.content_creator_pub_key));
+                res.insert(*UserAddress::from_public_key(&self.content_creator_pub_key));
             }
             OperationType::ExecuteSC { .. } => {}
             OperationType::CallSC { .. } => {}

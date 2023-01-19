@@ -19,7 +19,7 @@ use massa_execution_exports::{
 };
 use massa_final_state::FinalState;
 use massa_ledger_exports::{SetOrDelete, SetUpdateOrDelete};
-use massa_models::address::ExecutionAddressCycleInfo;
+use massa_models::address::{ExecutionAddressCycleInfo, UserAddress};
 use massa_models::execution::EventFilter;
 use massa_models::output_event::SCOutputEvent;
 use massa_models::prehash::PreHashSet;
@@ -217,7 +217,7 @@ impl ExecutionState {
         let sender_addr = operation.content_creator_address;
 
         // get the thread to which the operation belongs
-        let op_thread = sender_addr.get_thread(self.config.thread_count);
+        let op_thread = UserAddress(sender_addr).get_thread(self.config.thread_count);
 
         // check block/op thread compatibility
         if op_thread != block_slot.thread {
