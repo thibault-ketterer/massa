@@ -34,17 +34,18 @@ use massa_models::config::constants::{
     MAX_ASYNC_GAS, MAX_ASYNC_MESSAGE_DATA, MAX_ASYNC_POOL_LENGTH, MAX_BLOCK_SIZE,
     MAX_BOOTSTRAP_ASYNC_POOL_CHANGES, MAX_BOOTSTRAP_BLOCKS, MAX_BOOTSTRAP_ERROR_LENGTH,
     MAX_BOOTSTRAP_FINAL_STATE_PARTS_SIZE, MAX_BOOTSTRAP_MESSAGE_SIZE, MAX_BYTECODE_LENGTH,
-    MAX_CONSENSUS_BLOCKS_IDS, MAX_DATASTORE_ENTRY_COUNT, MAX_DATASTORE_KEY_LENGTH,
-    MAX_DATASTORE_VALUE_LENGTH, MAX_DEFERRED_CREDITS_LENGTH, MAX_ENDORSEMENTS_PER_MESSAGE,
-    MAX_EXECUTED_OPS_CHANGES_LENGTH, MAX_EXECUTED_OPS_LENGTH, MAX_FUNCTION_NAME_LENGTH,
-    MAX_GAS_PER_BLOCK, MAX_LEDGER_CHANGES_COUNT, MAX_MESSAGE_SIZE, MAX_OPERATIONS_PER_BLOCK,
-    MAX_OPERATION_DATASTORE_ENTRY_COUNT, MAX_OPERATION_DATASTORE_KEY_LENGTH,
-    MAX_OPERATION_DATASTORE_VALUE_LENGTH, MAX_PARAMETERS_SIZE, MAX_PRODUCTION_STATS_LENGTH,
-    MAX_ROLLS_COUNT_LENGTH, NETWORK_CONTROLLER_CHANNEL_SIZE, NETWORK_EVENT_CHANNEL_SIZE,
-    NETWORK_NODE_COMMAND_CHANNEL_SIZE, NETWORK_NODE_EVENT_CHANNEL_SIZE, OPERATION_VALIDITY_PERIODS,
-    PERIODS_PER_CYCLE, POOL_CONTROLLER_CHANNEL_SIZE, POS_MISS_RATE_DEACTIVATION_THRESHOLD,
-    POS_SAVED_CYCLES, PROTOCOL_CONTROLLER_CHANNEL_SIZE, PROTOCOL_EVENT_CHANNEL_SIZE, ROLL_PRICE,
-    T0, THREAD_COUNT, VERSION,
+    MAX_CONSENSUS_BLOCKS_IDS, MAX_DATASTORE_ENTRY_COUNT, MAX_DATASTORE_KEY_LENGTH, MAX_DATASTORE_VALUE_LENGTH,
+    MAX_DEFERRED_CREDITS_LENGTH, MAX_ENDORSEMENTS_PER_MESSAGE, MAX_EXECUTED_OPS_CHANGES_LENGTH,
+    MAX_EXECUTED_OPS_LENGTH, MAX_FUNCTION_NAME_LENGTH, MAX_GAS_PER_BLOCK, MAX_LEDGER_CHANGES_COUNT,
+    MAX_MESSAGE_SIZE, MAX_OPERATIONS_PER_BLOCK, MAX_OPERATION_DATASTORE_ENTRY_COUNT,
+    MAX_OPERATION_DATASTORE_KEY_LENGTH, MAX_OPERATION_DATASTORE_VALUE_LENGTH, MAX_PARAMETERS_SIZE,
+    MAX_PRODUCTION_STATS_LENGTH, MAX_ROLLS_COUNT_LENGTH, NETWORK_CONTROLLER_CHANNEL_SIZE,
+    NETWORK_EVENT_CHANNEL_SIZE, NETWORK_NODE_COMMAND_CHANNEL_SIZE, NETWORK_NODE_EVENT_CHANNEL_SIZE,
+    OPERATION_VALIDITY_PERIODS, PERIODS_PER_CYCLE, POOL_CONTROLLER_CHANNEL_SIZE,
+    POS_MISS_RATE_DEACTIVATION_THRESHOLD, POS_SAVED_CYCLES, PROTOCOL_CONTROLLER_CHANNEL_SIZE,
+    PROTOCOL_EVENT_CHANNEL_SIZE, ROLL_PRICE, T0, THREAD_COUNT, VERSION,
+    VERSIONING_BLOCK_THRESHOLD_PROPORTION, VERSIONING_CONTROLLER_CHANNEL_SIZE,
+    VERSIONING_NB_BLOCKS_CONSIDERED,
 };
 use massa_models::config::CONSENSUS_BOOTSTRAP_PART_SIZE;
 use massa_network_exports::{Establisher, NetworkConfig, NetworkManager};
@@ -61,7 +62,7 @@ use massa_protocol_worker::start_protocol_controller;
 use massa_storage::Storage;
 use massa_time::MassaTime;
 use massa_versioning_exports::{
-    VersioningCommand, VersioningCommandSender, VersioningConfig, VersioningManager,
+    VersioningCommand, /*VersioningCommandSender,*/ VersioningConfig, VersioningManager,
     VersioningReceivers, VersioningSenders,
 };
 use massa_versioning_worker::start_versioning_worker;
@@ -91,6 +92,7 @@ async fn launch(
     Box<dyn SelectorManager>,
     Box<dyn PoolManager>,
     ProtocolManager,
+    VersioningManager,
     NetworkManager,
     Box<dyn FactoryManager>,
     mpsc::Receiver<()>,
@@ -386,6 +388,9 @@ async fn launch(
     let (protocol_command_sender, protocol_command_receiver) =
         mpsc::channel::<ProtocolCommand>(PROTOCOL_CONTROLLER_CHANNEL_SIZE);
 
+    let (versioning_command_sender, versioning_command_receiver) =
+        mpsc::channel::<VersioningCommand>(VERSIONING_CONTROLLER_CHANNEL_SIZE);
+
     let consensus_config = ConsensusConfig {
         genesis_timestamp: *GENESIS_TIMESTAMP,
         end_timestamp: *END_TIMESTAMP,
@@ -487,6 +492,26 @@ async fn launch(
     )
     .await
     .expect("could not start protocol controller");
+
+    let versioning_config = VersioningConfig {
+        nb_blocks_considered: VERSIONING_NB_BLOCKS_CONSIDERED,
+        threshold: VERSIONING_BLOCK_THRESHOLD_PROPORTION,
+    };
+
+    let versioning_senders = VersioningSenders {};
+
+    let versioning_receivers = VersioningReceivers {
+        versioning_command_receiver,
+    };
+
+    let versioning_manager = start_versioning_worker(
+        versioning_config,
+        versioning_receivers,
+        versioning_senders.clone(),
+        shared_storage.clone(),
+    )
+    .await
+    .expect("could not start versioning controller");
 
     // launch factory
     let factory_config = FactoryConfig {
@@ -636,6 +661,7 @@ async fn launch(
         selector_manager,
         pool_manager,
         protocol_manager,
+        versioning_manager,
         network_manager,
         factory_manager,
         api_private_stop_rx,
@@ -652,6 +678,7 @@ struct Managers {
     selector_manager: Box<dyn SelectorManager>,
     pool_manager: Box<dyn PoolManager>,
     protocol_manager: ProtocolManager,
+    versioning_manager: VersioningManager,
     network_manager: NetworkManager,
     factory_manager: Box<dyn FactoryManager>,
 }
@@ -665,6 +692,7 @@ async fn stop(
         mut selector_manager,
         mut pool_manager,
         protocol_manager,
+        versioning_manager,
         network_manager,
         mut factory_manager,
     }: Managers,
@@ -709,6 +737,9 @@ async fn stop(
 
     // stop selector controller
     selector_manager.stop();
+
+    // stop versioning controller
+    versioning_manager.stop();
 
     // stop pool controller
     // TODO
@@ -822,6 +853,7 @@ async fn run(args: Args) -> anyhow::Result<()> {
             selector_manager,
             pool_manager,
             protocol_manager,
+            versioning_manager,
             network_manager,
             factory_manager,
             mut api_private_stop_rx,
@@ -890,6 +922,7 @@ async fn run(args: Args) -> anyhow::Result<()> {
                 selector_manager,
                 pool_manager,
                 protocol_manager,
+                versioning_manager,
                 network_manager,
                 factory_manager,
             },
