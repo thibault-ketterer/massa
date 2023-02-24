@@ -17,7 +17,7 @@ use massa_serialization::{Serializer, U32VarIntSerializer};
 /// Encryption function using AES-GCM cipher.
 ///
 /// Read `lib.rs` module documentation for more information.
-pub fn encrypt(password: &str, data: &[u8]) -> Result<Vec<u8>, CipherError> {
+pub fn encrypt(password: &str, data: &[u8]) -> Result<(Vec<u8>, Vec<u8>, Vec<u8>), CipherError> {
     // generate the PBKDF2 salt
     let raw_salt: String = thread_rng()
         .sample_iter(&Alphanumeric)
@@ -52,5 +52,8 @@ pub fn encrypt(password: &str, data: &[u8]) -> Result<Vec<u8>, CipherError> {
     content.extend(salt.as_bytes());
     content.extend(nonce_bytes);
     content.extend(encrypted_bytes);
-    Ok(content)
+
+    let salt = salt.as_bytes().to_vec();
+    let nonce = nonce.as_slice().to_vec();
+    Ok((content, salt, nonce))
 }

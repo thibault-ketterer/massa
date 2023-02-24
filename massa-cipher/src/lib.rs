@@ -12,7 +12,7 @@
 //!
 //! The AES-GCM crate we use has received one security audit by NCC Group, with no significant findings.
 
-mod constants;
+pub mod constants;
 mod decrypt;
 mod encrypt;
 mod error;

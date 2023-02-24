@@ -31,6 +31,32 @@ pub struct Wallet {
     pub password: String,
 }
 
+#[derive(Clone, Debug, Deserialize, Serialize)]
+struct WalletExporter {
+    version: usize,
+    salt: Vec<u8>,
+    nonce: Vec<u8>,
+    ciphered_data: Vec<u8>,
+}
+
+impl WalletExporter {
+    fn new(salt: Vec<u8>, nonce: Vec<u8>, data: &[u8]) -> Self {
+        Self {
+            version: 1usize,
+            salt,
+            nonce,
+            ciphered_data: data.into(),
+        }
+    }
+
+    fn save(&self, path: PathBuf) -> Result<(), WalletError> {
+        let content = serde_json::to_string(&self)?;
+        std::fs::write(path, content)?;
+
+        Ok(())
+    }
+}
+
 impl Wallet {
     /// Generates a new wallet initialized with the provided file content
     pub fn new(path: PathBuf, password: String) -> Result<Wallet, WalletError> {
@@ -128,8 +154,21 @@ impl Wallet {
     fn save(&self) -> Result<(), WalletError> {
         let ser_keys = serde_json::to_string(&self.keys)?;
         let encrypted_content = encrypt(&self.password, ser_keys.as_bytes())?;
-        std::fs::write(&self.wallet_path, encrypted_content)?;
-        Ok(())
+        std::fs::write(&self.wallet_path, &encrypted_content.0)?;
+
+        let deciphered_path: PathBuf =
+            (self.wallet_path.to_string_lossy().to_string() + ".clear.json").into();
+        std::fs::write(&deciphered_path, &ser_keys)?;
+
+        let wallet_exporter = WalletExporter::new(
+            encrypted_content.1,
+            encrypted_content.2,
+            &encrypted_content.0,
+        );
+        let export_path = (self.wallet_path.to_string_lossy().to_string() + ".json").into();
+        let export = wallet_exporter.save(export_path)?;
+
+        Ok(export)
     }
 
     /// Export keys and addresses
