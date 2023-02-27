@@ -20,7 +20,8 @@ pub fn create_test_wallet(default_accounts: Option<PreHashMap<Address, KeyPair>>
                     .unwrap()
                     .as_bytes(),
             )
-            .unwrap(),
+            .unwrap()
+            .0,
         )
         .unwrap();
     Wallet::new(wallet_file.path().to_path_buf(), "test".to_string()).unwrap()
