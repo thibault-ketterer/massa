@@ -162,22 +162,6 @@ fn test_bootstrap_server() {
     let final_state_server_clone2 = final_state_server.clone();
 
     let (mock_bs_listener, mock_remote_connector) = conn_establishment_mocks();
-    // // start bootstrap server
-    // let (mut mock_bs_listener, bootstrap_interface) = mock_establisher::new();
-    // let bootstrap_manager = start_bootstrap_server::<TcpStream>(
-    //     consensus_controller,
-    //     NetworkCommandSender(network_cmd_tx),
-    //     final_state_server.clone(),
-    //     bootstrap_config.clone(),
-    //     mock_bs_listener
-    //         .get_listener(&bootstrap_config.listen_addr.unwrap())
-    //         .unwrap(),
-    //     keypair.clone(),
-    //     Version::from_str("TEST.1.10").unwrap(),
-    //     mip_store.clone(),
-    // )
-    // .unwrap()
-    // .unwrap();
 
     // Setup network command mock-story: hard-code the result of getting bootstrap peers
     let mut mocked1 = MockNetworkCommandSender::new();
@@ -228,16 +212,15 @@ fn test_bootstrap_server() {
         .name("bootstrap_thread".to_string())
         .spawn(move || {
             start_bootstrap_server::<MockNetworkCommandSender>(
+                bootstrap_config.listen_addr.unwrap(),
                 stream_mock1,
                 mocked1,
                 final_state_server_clone1,
                 bootstrap_config.clone(),
-                mock_bs_listener,
                 keypair.clone(),
                 Version::from_str("TEST.1.10").unwrap(),
                 cloned_store,
             )
-            .unwrap()
             .unwrap()
         })
         .unwrap();

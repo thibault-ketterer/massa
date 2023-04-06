@@ -44,8 +44,9 @@ impl BootstrapTcpListener {
         std::thread::Builder::new()
             .name("bs_listener".to_string())
             .spawn(move || loop {
+                dbg!("polling events:");
                 poll.poll(&mut events, None).unwrap();
-                info!("polling events:");
+                dbg!("events polled");
 
                 for event in events.iter() {
                     match event.token() {

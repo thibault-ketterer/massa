@@ -192,10 +192,14 @@ fn bootstrap_from_server(
     our_version: Version,
 ) -> Result<(), BootstrapError> {
     massa_trace!("bootstrap.lib.bootstrap_from_server", {});
+    dbg!("bootstrap_from_server");
 
     // read error (if sent by the server)
     // client.next() is not cancel-safe but we drop the whole client object if cancelled => it's OK
-    match client.next_timeout(Some(cfg.read_error_timeout.to_duration())) {
+    let next = client.next_timeout(Some(cfg.read_error_timeout.to_duration()));
+
+    dbg!(&next);
+    match next {
         Err(BootstrapError::TimedOut(_)) => {
             massa_trace!(
                 "bootstrap.lib.bootstrap_from_server: No error sent at connection",
@@ -208,6 +212,7 @@ fn bootstrap_from_server(
         }
         Ok(msg) => return Err(BootstrapError::UnexpectedServerMessage(msg)),
     };
+    dbg!("good timeout!, now let's handshake!");
 
     // handshake
     let send_time_uncompensated = MassaTime::now()?;
@@ -404,9 +409,11 @@ pub async fn get_state(
     restart_from_snapshot_at_period: Option<u64>,
 ) -> Result<GlobalBootstrapState, BootstrapError> {
     massa_trace!("bootstrap.lib.get_state", {});
+    dbg!("getting state");
 
     // If we restart from a snapshot, do not bootstrap
     if restart_from_snapshot_at_period.is_some() {
+        dbg!("restart from snapshot");
         massa_trace!("bootstrap.lib.get_state.init_from_snapshot", {});
         return Ok(GlobalBootstrapState::new(final_state));
     }
@@ -461,14 +468,17 @@ pub async fn get_state(
                     panic!("This episode has come to an end, please get the latest testnet node version to continue");
                 }
             }
-            info!("Start bootstrapping from {}", addr);
-            match connect_to_server(
+            dbg!("Start bootstrapping from {}", addr);
+            let conn = connect_to_server(
                 &mut connector,
                 bootstrap_config,
                 addr,
                 &node_id.get_public_key(),
-            ) {
+            );
+            dbg!(conn.is_ok(), "connected to server");
+            match conn {
                 Ok(mut client) => {
+                    dbg!("bootstrapping from server");
                     match bootstrap_from_server(bootstrap_config, &mut client, &mut next_bootstrap_message, &mut global_bootstrap_state,version)
                       // cancellable
                     {

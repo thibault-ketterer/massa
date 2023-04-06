@@ -77,14 +77,18 @@ impl BootstrapClientBinder {
         // read signature
         let sig = {
             let mut sig_bytes = [0u8; SIGNATURE_SIZE_BYTES];
+            dbg!("reading signature");
             self.duplex.read_exact(&mut sig_bytes)?;
+            dbg!("signature read");
             Signature::from_bytes(&sig_bytes)?
         };
 
         // read message length
         let msg_len = {
             let mut msg_len_bytes = vec![0u8; self.size_field_len];
+            dbg!("reading message length");
             self.duplex.read_exact(&mut msg_len_bytes[..])?;
+            dbg!("message length read");
             u32::from_be_bytes_min(&msg_len_bytes, self.cfg.max_bootstrap_message_size)?.0
         };
 
