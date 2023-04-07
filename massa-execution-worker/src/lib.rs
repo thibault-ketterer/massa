@@ -117,3 +117,10 @@ use criterion as _;
     feature = "testing"
 ))]
 mod tests;
+#[cfg(any(
+    test,
+    feature = "gas_calibration",
+    feature = "benchmarking",
+    feature = "testing"
+))]
+pub use tests::get_sample_state;

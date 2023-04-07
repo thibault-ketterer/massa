@@ -104,6 +104,7 @@ pub fn get_random_address_full() -> (Address, KeyPair) {
     (Address::from_public_key(&keypair.get_public_key()), keypair)
 }
 
+/// Generaties an example final-state
 pub fn get_sample_state(
     last_start_period: u64,
 ) -> Result<(Arc<RwLock<FinalState>>, NamedTempFile, TempDir), LedgerError> {

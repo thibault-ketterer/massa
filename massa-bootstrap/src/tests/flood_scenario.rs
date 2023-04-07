@@ -8,18 +8,12 @@ use crate::{
 use crate::{BootstrapConfig, BootstrapServerMessage};
 use massa_consensus_exports::test_exports::MockConsensusControllerImpl;
 
-#[double]
-use massa_final_state::FinalState;
-
 use massa_models::node::NodeId;
 use massa_models::version::Version;
 use massa_network_exports::MockNetworkCommandSender;
 use massa_signature::{KeyPair, PublicKey};
-use mockall_double::double;
-use parking_lot::RwLock;
 use std::net::{SocketAddr, TcpListener};
 use std::str::FromStr;
-use std::sync::Arc;
 
 lazy_static::lazy_static! {
     pub static ref BOOTSTRAP_CONFIG_KEYPAIR: (BootstrapConfig, KeyPair) = {
@@ -53,7 +47,7 @@ fn test_server_mock_flood() {
             start_bootstrap_server::<MockNetworkCommandSender>(
                 stream_mock1,
                 mocked1,
-                Arc::new(RwLock::new(MockFinalState::default())),
+                massa_execution_worker::get_sample_state(0).unwrap().0,
                 bootstrap_config.clone(),
                 listener_mock,
                 *keypair,
