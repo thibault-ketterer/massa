@@ -2550,6 +2550,7 @@ dependencies = [
  "massa_time",
  "massa_versioning_worker",
  "mockall",
+ "mockall_double",
  "nom",
  "num_enum",
  "parking_lot",
@@ -2752,6 +2753,7 @@ dependencies = [
  "massa_pos_exports",
  "massa_serialization 0.1.0",
  "massa_signature",
+ "mockall",
  "nom",
  "serde",
  "thiserror",
@@ -3313,6 +3315,18 @@ name = "mockall_derive"
 version = "0.11.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "22ce75669015c4f47b289fd4d4f56e894e4c96003ffdf3ac51313126f94c6cbb"
+dependencies = [
+ "cfg-if",
+ "proc-macro2 1.0.54",
+ "quote 1.0.26",
+ "syn 1.0.109",
+]
+
+[[package]]
+name = "mockall_double"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ae71c7bb287375187c775cf82e2dcf1bef3388aaf58f0789a77f9c7ab28466f6"
 dependencies = [
  "cfg-if",
  "proc-macro2 1.0.54",

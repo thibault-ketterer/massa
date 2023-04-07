@@ -21,6 +21,7 @@ massa_pos_exports = { path = "../massa-pos-exports" }
 massa_hash = { path = "../massa-hash" }
 
 [dev-dependencies]
+mockall = "0.11.4"
 massa_async_pool = { path = "../massa-async-pool", features = ["testing"] }
 massa_ledger_worker = { path = "../massa-ledger-worker", features = [
     "testing",
@@ -30,10 +31,6 @@ massa_signature = { path = "../massa-signature" }
 
 # for more information on what are the following features used for, see the cargo.toml at workspace level
 [features]
-testing = [
-    "massa_ledger_worker/testing",
-    "massa_async_pool/testing",
-    "massa_pos_exports/testing",
-]
+testing = ["massa_ledger_worker/testing", "massa_async_pool/testing", "massa_pos_exports/testing"]
 sandbox = ["massa_async_pool/sandbox"]
 create_snapshot = []

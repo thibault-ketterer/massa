@@ -63,6 +63,7 @@ pub struct FinalState {
 
 const FINAL_STATE_HASH_INITIAL_BYTES: &[u8; 32] = &[0; HASH_SIZE_BYTES];
 
+#[cfg_attr(test, mockall::automock)]
 impl FinalState {
     /// Initializes a new `FinalState`
     ///
