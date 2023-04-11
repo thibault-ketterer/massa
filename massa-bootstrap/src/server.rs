@@ -444,7 +444,7 @@ impl<C: NetworkCommandSenderTrait + Clone> BootstrapServer<'_, C> {
 /// sessions.
 #[allow(clippy::too_many_arguments)]
 fn run_bootstrap_session<C: NetworkCommandSenderTrait>(
-    mut server: BootstrapServerBinder,
+    server: BootstrapServerBinder,
     arc_counter: Arc<()>,
     config: BootstrapConfig,
     remote_addr: SocketAddr,
@@ -459,7 +459,7 @@ fn run_bootstrap_session<C: NetworkCommandSenderTrait>(
     // TODO: reinstate prevention of bootstrap slot camping. Deadline cancellation is one option
     let res = manage_bootstrap(
         &config,
-        &mut server,
+        server,
         data_execution,
         version,
         consensus_command_sender,
@@ -475,7 +475,7 @@ fn run_bootstrap_session<C: NetworkCommandSenderTrait>(
     });
     drop(arc_counter);
     match res {
-        Err(BootstrapError::TimedOut(_)) => {
+        Err((mut server, BootstrapError::TimedOut(_))) => {
             debug!("bootstrap timeout for peer {}", remote_addr);
             // We allow unused result because we don't care if an error is thrown when
             // sending the error message to the server we will close the socket anyway.
@@ -484,11 +484,11 @@ fn run_bootstrap_session<C: NetworkCommandSenderTrait>(
                 format_duration(config.bootstrap_timeout.to_duration())
             ));
         }
-        Err(BootstrapError::ReceivedError(error)) => debug!(
+        Err((_, BootstrapError::ReceivedError(error))) => debug!(
             "bootstrap serving error received from peer {}: {}",
             remote_addr, error
         ),
-        Err(err) => {
+        Err((mut server, err)) => {
             debug!("bootstrap serving error for peer {}: {}", remote_addr, err);
             // We allow unused result because we don't care if an error is thrown when
             // sending the error message to the server we will close the socket anyway.
@@ -502,7 +502,7 @@ fn run_bootstrap_session<C: NetworkCommandSenderTrait>(
 
 #[allow(clippy::too_many_arguments)]
 pub fn stream_bootstrap_information(
-    server: &mut BootstrapServerBinder,
+    mut server: BootstrapServerBinder,
     final_state: Arc<RwLock<FinalState>>,
     consensus_controller: Box<dyn ConsensusController>,
     mut last_slot: Option<Slot>,
@@ -514,7 +514,7 @@ pub fn stream_bootstrap_information(
     mut last_consensus_step: StreamingStep<PreHashSet<BlockId>>,
     mut send_last_start_period: bool,
     write_timeout: Duration,
-) -> Result<(), BootstrapError> {
+) -> Result<BootstrapServerBinder, (BootstrapServerBinder, BootstrapError)> {
     loop {
         #[cfg(test)]
         {
@@ -543,18 +543,40 @@ pub fn stream_bootstrap_information(
                 None
             };
 
-            let (data, new_ledger_step) = final_state_read
+            // let (data, new_ledger_step) = final_state_read
+            //     .ledger
+            //     .get_ledger_part(last_ledger_step.clone())
+            //     .map_err(|e| (server, e.into()))?;
+
+            let (data, new_ledger_step) = match final_state_read
                 .ledger
-                .get_ledger_part(last_ledger_step.clone())?;
+                .get_ledger_part(last_ledger_step.clone())
+            {
+                Ok((data, new_ledger_step)) => (data, new_ledger_step),
+                Err(e) => {
+                    break Err((server, e.into()));
+                }
+            };
+
             ledger_part = data;
 
             let (pool_data, new_pool_step) =
                 final_state_read.async_pool.get_pool_part(last_pool_step);
             async_pool_part = pool_data;
 
-            let (cycle_data, new_cycle_step) = final_state_read
+            // let (cycle_data, new_cycle_step) = final_state_read
+            //     .pos_state
+            //     .get_cycle_history_part(last_cycle_step)
+            //     .map_err(|e| (server, e.into()))?;
+            let (cycle_data, new_cycle_step) = match final_state_read
                 .pos_state
-                .get_cycle_history_part(last_cycle_step)?;
+                .get_cycle_history_part(last_cycle_step)
+            {
+                Ok((cycle_data, new_cycle_step)) => (cycle_data, new_cycle_step),
+                Err(e) => {
+                    break Err((server, e.into()));
+                }
+            };
             pos_cycle_part = cycle_data;
 
             let (credits_data, new_credits_step) = final_state_read
@@ -569,9 +591,9 @@ pub fn stream_bootstrap_information(
 
             if let Some(slot) = last_slot && slot != final_state_read.slot {
                 if slot > final_state_read.slot {
-                    return Err(BootstrapError::GeneralError(
+                    return Err((server, BootstrapError::GeneralError(
                         "Bootstrap cursor set to future slot".to_string(),
-                    ));
+                    )));
                 }
                 final_state_changes = match final_state_read.get_state_changes_part(
                     slot,
@@ -586,7 +608,7 @@ pub fn stream_bootstrap_information(
                         slot_too_old = true;
                         Vec::default()
                     }
-                    Err(err) => return Err(BootstrapError::FinalStateError(err)),
+                    Err(err) => return Err((server, BootstrapError::FinalStateError(err))),
                 };
             } else {
                 final_state_changes = Vec::new();
@@ -604,7 +626,10 @@ pub fn stream_bootstrap_information(
         }
 
         if slot_too_old {
-            return server.send_msg(write_timeout, BootstrapServerMessage::SlotTooOld);
+            return match server.send_msg(write_timeout, BootstrapServerMessage::SlotTooOld) {
+                Ok(()) => Ok(server),
+                Err(e) => Err((server, e.into())),
+            };
         }
 
         // Setup final state global cursor
@@ -632,8 +657,19 @@ pub fn stream_bootstrap_information(
         };
         let mut consensus_outdated_ids: PreHashSet<BlockId> = PreHashSet::default();
         if final_state_global_step.finished() {
-            let (part, outdated_ids, new_consensus_step) = consensus_controller
-                .get_bootstrap_part(last_consensus_step, final_state_changes_step)?;
+            // let (part, outdated_ids, new_consensus_step) = consensus_controller
+            //     .get_bootstrap_part(last_consensus_step, final_state_changes_step)
+            //     .map_err(|e| (server, e.into()))?;
+            let (part, outdated_ids, new_consensus_step) = match consensus_controller
+                .get_bootstrap_part(last_consensus_step, final_state_changes_step)
+            {
+                Ok((part, outdated_ids, new_consensus_step)) => {
+                    (part, outdated_ids, new_consensus_step)
+                }
+                Err(e) => {
+                    break Err((server, e.into()));
+                }
+            };
             consensus_part = part;
             consensus_outdated_ids = outdated_ids;
             last_consensus_step = new_consensus_step;
@@ -657,12 +693,35 @@ pub fn stream_bootstrap_information(
             && final_state_changes_step.finished()
             && last_consensus_step.finished()
         {
-            server.send_msg(write_timeout, BootstrapServerMessage::BootstrapFinished)?;
-            break;
+            // server
+            //     .send_msg(write_timeout, BootstrapServerMessage::BootstrapFinished)
+            //     .map_err(|e| (server, e.into()))?;
+            match server.send_msg(write_timeout, BootstrapServerMessage::BootstrapFinished) {
+                Ok(()) => return Ok(server),
+                Err(e) => return Err((server, e.into())),
+            }
+            // break Ok(server);
         }
 
         // At this point we know that consensus, final state or both are not finished
-        server.send_msg(
+        // server
+        //     .send_msg(
+        //         write_timeout,
+        //         BootstrapServerMessage::BootstrapPart {
+        //             slot: current_slot,
+        //             ledger_part,
+        //             async_pool_part,
+        //             pos_cycle_part,
+        //             pos_credits_part,
+        //             exec_ops_part,
+        //             final_state_changes,
+        //             consensus_part,
+        //             consensus_outdated_ids,
+        //             last_start_period,
+        //         },
+        //     )
+        //     .map_err(|e| (server, e.into()))?;
+        match server.send_msg(
             write_timeout,
             BootstrapServerMessage::BootstrapPart {
                 slot: current_slot,
@@ -676,63 +735,107 @@ pub fn stream_bootstrap_information(
                 consensus_outdated_ids,
                 last_start_period,
             },
-        )?;
+        ) {
+            Ok(()) => {}
+            Err(e) => return Err((server, e.into())),
+        }
     }
-    Ok(())
 }
 
 #[allow(clippy::too_many_arguments)]
 fn manage_bootstrap<C: NetworkCommandSenderTrait>(
     bootstrap_config: &BootstrapConfig,
-    server: &mut BootstrapServerBinder,
+    server: BootstrapServerBinder,
     final_state: Arc<RwLock<FinalState>>,
     version: Version,
     consensus_controller: Box<dyn ConsensusController>,
     network_command_sender: C,
     _deadline: Instant,
     mip_store: MipStore,
-) -> Result<(), BootstrapError> {
+) -> Result<(), (BootstrapServerBinder, BootstrapError)> {
     massa_trace!("bootstrap.lib.manage_bootstrap", {});
     let read_error_timeout: Duration = bootstrap_config.read_error_timeout.into();
     let rt_hack = massa_network_exports::make_runtime();
 
-    server.handshake_timeout(version, Some(bootstrap_config.read_timeout.into()))?;
+    let mut server =
+        server.handshake_timeout(version, Some(bootstrap_config.read_timeout.into()))?;
 
     match server.next_timeout(Some(read_error_timeout)) {
         Err(BootstrapError::TimedOut(_)) => {}
-        Err(e) => return Err(e),
+        Err(e) => return Err((server, e)),
         Ok(BootstrapClientMessage::BootstrapError { error }) => {
-            return Err(BootstrapError::GeneralError(error));
+            return Err((server, BootstrapError::GeneralError(error)));
         }
-        Ok(msg) => return Err(BootstrapError::UnexpectedClientMessage(Box::new(msg))),
+        Ok(msg) => {
+            return Err((
+                server,
+                BootstrapError::UnexpectedClientMessage(Box::new(msg)),
+            ))
+        }
     };
 
     let write_timeout: Duration = bootstrap_config.write_timeout.into();
 
     // Sync clocks.
-    let server_time = MassaTime::now()?;
+    // let server_time = MassaTime::now().map_err(|e| (server, e.into()))?;
+    let server_time = match MassaTime::now() {
+        Ok(server_time) => server_time,
+        Err(e) => return Err((server, e.into())),
+    };
 
-    server.send_msg(
+    // server
+    //     .send_msg(
+    //         write_timeout,
+    //         BootstrapServerMessage::BootstrapTime {
+    //             server_time,
+    //             version,
+    //         },
+    //     )
+    //     .map_err(|e| (server, e.into()))?;
+    match server.send_msg(
         write_timeout,
         BootstrapServerMessage::BootstrapTime {
             server_time,
             version,
         },
-    )?;
-
+    ) {
+        Ok(()) => {}
+        Err(e) => return Err((server, e.into())),
+    }
+    let mut server = &mut server;
     loop {
         match server.next_timeout(Some(bootstrap_config.read_timeout.into())) {
-            Err(BootstrapError::TimedOut(_)) => break Ok(()),
-            Err(e) => break Err(e),
+            Err(BootstrapError::TimedOut(_)) => return Ok(()),
+            Err(e) => return Err((*server, e)),
             Ok(msg) => match msg {
                 BootstrapClientMessage::AskBootstrapPeers => {
-                    server.send_msg(
+                    // server
+                    //     .send_msg(
+                    //         write_timeout,
+                    //         BootstrapServerMessage::BootstrapPeers {
+                    //             peers: rt_hack
+                    //                 .block_on(network_command_sender.get_bootstrap_peers())
+                    //                 .map_err(|e| (server, e.into()))?,
+                    //         },
+                    //     )
+                    //     .map_err(|e| (server, e.into()))?;
+                    match server.send_msg(
                         write_timeout,
                         BootstrapServerMessage::BootstrapPeers {
-                            peers: rt_hack
-                                .block_on(network_command_sender.get_bootstrap_peers())?,
+                            peers: match rt_hack
+                                .block_on(network_command_sender.get_bootstrap_peers())
+                            {
+                                Ok(peers) => peers,
+                                Err(e) => return Err((*server, e.into())),
+                            },
+                            // rt_hack
+                            // .block_on(network_command_sender.get_bootstrap_peers())
+                            // .map_err(|e| (server, e.into()))?
                         },
-                    )?;
+                    ) {
+                        Ok(()) => {}
+                        Err(e) => return Err((*server, e.into())),
+                    }
                 }
                 BootstrapClientMessage::AskBootstrapPart {
                     last_slot,
@@ -744,8 +847,8 @@ fn manage_bootstrap<C: NetworkCommandSenderTrait>(
                     last_consensus_step,
                     send_last_start_period,
                 } => {
-                    stream_bootstrap_information(
-                        server,
+                    *server = stream_bootstrap_information(
+                        *server,
                         final_state.clone(),
                         consensus_controller.clone(),
                         last_slot,
@@ -761,14 +864,23 @@ fn manage_bootstrap<C: NetworkCommandSenderTrait>(
                 }
                 BootstrapClientMessage::AskBootstrapMipStore => {
                     let vs = mip_store.0.read().to_owned();
-                    server.send_msg(
+                    // server
+                    //     .send_msg(
+                    //         write_timeout,
+                    //         BootstrapServerMessage::BootstrapMipStore { store: vs.clone() },
+                    //     )
+                    //     .map_err(|e| (server, e.into()))?
+                    match server.send_msg(
                         write_timeout,
                         BootstrapServerMessage::BootstrapMipStore { store: vs.clone() },
-                    )?
+                    ) {
+                        Ok(()) => {}
+                        Err(e) => return Err((*server, e.into())),
+                    }
                 }
-                BootstrapClientMessage::BootstrapSuccess => break Ok(()),
+                BootstrapClientMessage::BootstrapSuccess => return Ok(()),
                 BootstrapClientMessage::BootstrapError { error } => {
-                    break Err(BootstrapError::ReceivedError(error));
+                    return Err((*server, BootstrapError::ReceivedError(error)));
                 }
             },
         };

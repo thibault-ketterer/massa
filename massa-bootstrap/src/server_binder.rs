@@ -74,24 +74,51 @@ impl BootstrapServerBinder {
     /// NOT cancel-safe
     /// MUST always be followed by a send of the `BootstrapMessage::BootstrapTime`
     pub fn handshake_timeout(
-        &mut self,
+        mut self,
         version: Version,
         duration: Option<Duration>,
-    ) -> Result<(), BootstrapError> {
+    ) -> Result<Self, (Self, BootstrapError)> {
         // read version and random bytes, send signature
         let msg_hash = {
             let mut version_bytes = Vec::new();
-            self.version_serializer
-                .serialize(&version, &mut version_bytes)?;
+            // self.version_serializer
+            //     .serialize(&version, &mut version_bytes)
+            //     .map_err(|e| (self, e.into()))?;
+            match self
+                .version_serializer
+                .serialize(&version, &mut version_bytes)
+            {
+                Ok(()) => (),
+                Err(e) => return Err((self, e.into())),
+            };
             let mut msg_bytes = vec![0u8; version_bytes.len() + self.randomness_size_bytes];
-            self.duplex.set_read_timeout(duration)?;
-            self.duplex.read_exact(&mut msg_bytes)?;
-            let (_, received_version) = self
+            // self.duplex
+            //     .set_read_timeout(duration)
+            //     .map_err(|e| (self, e.into()))?;
+            match self.duplex.set_read_timeout(duration) {
+                Ok(()) => (),
+                Err(e) => return Err((self, e.into())),
+            };
+            // self.duplex
+            //     .read_exact(&mut msg_bytes)
+            //     .map_err(|e| (self, e.into()))?;
+            match self.duplex.read_exact(&mut msg_bytes) {
+                Ok(()) => (),
+                Err(e) => return Err((self, e.into())),
+            };
+            // let (_, received_version) = self
+            //     .version_deserializer
+            //     .deserialize::<DeserializeError>(&msg_bytes[..version_bytes.len()])
+            //     .map_err(|err| (self, BootstrapError::GeneralError(format!("{}", &err))))?;
+            let (_, received_version) = match self
                 .version_deserializer
                 .deserialize::<DeserializeError>(&msg_bytes[..version_bytes.len()])
-                .map_err(|err| BootstrapError::GeneralError(format!("{}", &err)))?;
+            {
+                Ok((_, received_version)) => ((), received_version),
+                Err(err) => return Err((self, BootstrapError::GeneralError(format!("{}", &err)))),
+            };
             if !received_version.is_compatible(&version) {
-                return Err(BootstrapError::IncompatibleVersionError(format!("Received a bad incompatible version in handshake. (excepted: {}, received: {})", version, received_version)));
+                return Err((self, BootstrapError::IncompatibleVersionError(format!("Received a bad incompatible version in handshake. (excepted: {}, received: {})", version, received_version))));
             }
             Hash::compute_from(&msg_bytes)
         };
@@ -99,7 +126,7 @@ impl BootstrapServerBinder {
         // save prev sig
         self.prev_message = Some(msg_hash);
 
-        Ok(())
+        Ok(self)
     }
 
     pub fn send_msg(
