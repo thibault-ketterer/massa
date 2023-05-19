@@ -48,8 +48,13 @@ impl ConsensusState {
             let block_slot;
             let block_creator;
             let block_parents;
+
+            let discarded_active = if let Some(BlockStatus::Active {
+                a_block: discarded_active,
+                storage,
+            }) = self.block_statuses.remove(&discard_active_h)
             {
-                let read_blocks = self.storage.read_blocks();
+                let read_blocks = storage.read_blocks();
                 let block = read_blocks.get(&discard_active_h).ok_or_else(|| {
                     ConsensusError::MissingBlock(format!(
                         "missing block when removing unused final active blocks: {}",
@@ -59,13 +64,6 @@ impl ConsensusState {
                 block_slot = block.content.header.content.slot;
                 block_creator = block.content_creator_address;
                 block_parents = block.content.header.content.parents.clone();
-            };
-
-            let discarded_active = if let Some(BlockStatus::Active {
-                a_block: discarded_active,
-                ..
-            }) = self.block_statuses.remove(&discard_active_h)
-            {
                 self.active_index.remove(&discard_active_h);
                 discarded_active
             } else {

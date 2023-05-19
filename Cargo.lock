@@ -2535,11 +2535,17 @@ dependencies = [
 name = "massa_consensus_worker"
 version = "0.1.0"
 dependencies = [
+ "crossbeam-channel",
  "displaydoc",
  "massa_consensus_exports",
+ "massa_execution_exports",
  "massa_hash 0.1.0",
  "massa_logging",
  "massa_models",
+ "massa_pool_exports",
+ "massa_pos_exports",
+ "massa_pos_worker",
+ "massa_protocol_exports",
  "massa_signature",
  "massa_storage",
  "massa_time",
@@ -2547,6 +2553,7 @@ dependencies = [
  "parking_lot",
  "serde",
  "serde_json",
+ "tokio",
  "tracing",
 ]
 
