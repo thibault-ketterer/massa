@@ -57,7 +57,6 @@ impl Default for MipInfoSerializer {
 
 impl Serializer<MipInfo> for MipInfoSerializer {
     fn serialize(&self, value: &MipInfo, buffer: &mut Vec<u8>) -> Result<(), SerializeError> {
-        // name
         let name_len_ = value.name.len();
         if name_len_ > MIP_INFO_NAME_MAX_LEN as usize {
             return Err(SerializeError::StringTooBig(format!(
@@ -629,44 +628,47 @@ impl Serializer<MipStoreStats> for MipStoreStatsSerializer {
         // self.u32_serializer.serialize(&cfg_2, buffer)?;
 
         // stats data
+        {
+            let entry_count_ = value.latest_announcements.len();
+            let entry_count = u32::try_from(entry_count_).map_err(|e| {
+                SerializeError::GeneralError(format!("Could not convert to u32: {}", e))
+            })?;
+            let entry_count_max = u32::try_from(MIP_STORE_STATS_BLOCK_CONSIDERED).map_err(|e| {
+                SerializeError::GeneralError(format!("Could not convert to u32: {}", e))
+            })?;
 
-        let entry_count_ = value.latest_announcements.len();
-        let entry_count = u32::try_from(entry_count_).map_err(|e| {
-            SerializeError::GeneralError(format!("Could not convert to u32: {}", e))
-        })?;
-        let entry_count_max = u32::try_from(MIP_STORE_STATS_BLOCK_CONSIDERED).map_err(|e| {
-            SerializeError::GeneralError(format!("Could not convert to u32: {}", e))
-        })?;
-
-        if entry_count > entry_count_max {
-            return Err(SerializeError::GeneralError(format!(
-                "Too many entries in MipStoreStats latest announcements, max: {}",
-                MIP_STORE_STATS_BLOCK_CONSIDERED
-            )));
+            if entry_count > entry_count_max {
+                return Err(SerializeError::GeneralError(format!(
+                    "Too many entries in MipStoreStats latest announcements, max: {}",
+                    MIP_STORE_STATS_BLOCK_CONSIDERED
+                )));
+            }
+            self.u32_serializer.serialize(&entry_count, buffer)?;
+            for v in value.latest_announcements.iter() {
+                self.u32_serializer.serialize(v, buffer)?;
+            }
         }
-        self.u32_serializer.serialize(&entry_count, buffer)?;
-        for v in value.latest_announcements.iter() {
-            self.u32_serializer.serialize(v, buffer)?;
-        }
 
-        let entry_count_2_ = value.network_version_counters.len();
-        let entry_count_2 = u32::try_from(entry_count_2_).map_err(|e| {
-            SerializeError::GeneralError(format!("Could not convert to u32: {}", e))
-        })?;
-        let entry_count_2_max = u32::try_from(MIP_STORE_STATS_COUNTERS_MAX).map_err(|e| {
-            SerializeError::GeneralError(format!("Could not convert to u32: {}", e))
-        })?;
+        {
+            let entry_count_2_ = value.network_version_counters.len();
+            let entry_count_2 = u32::try_from(entry_count_2_).map_err(|e| {
+                SerializeError::GeneralError(format!("Could not convert to u32: {}", e))
+            })?;
+            let entry_count_2_max = u32::try_from(MIP_STORE_STATS_COUNTERS_MAX).map_err(|e| {
+                SerializeError::GeneralError(format!("Could not convert to u32: {}", e))
+            })?;
 
-        if entry_count_2 > entry_count_2_max {
-            return Err(SerializeError::GeneralError(format!(
-                "Too many entries in MipStoreStats version counters, max: {}",
-                MIP_STORE_STATS_COUNTERS_MAX
-            )));
-        }
-        self.u32_serializer.serialize(&entry_count, buffer)?;
-        for (v, c) in value.network_version_counters.iter() {
-            self.u32_serializer.serialize(v, buffer)?;
-            self.u64_serializer.serialize(c, buffer)?;
+            if entry_count_2 > entry_count_2_max {
+                return Err(SerializeError::GeneralError(format!(
+                    "Too many entries in MipStoreStats version counters, max: {}",
+                    MIP_STORE_STATS_COUNTERS_MAX
+                )));
+            }
+            self.u32_serializer.serialize(&entry_count_2, buffer)?;
+            for (v, c) in value.network_version_counters.iter() {
+                self.u32_serializer.serialize(v, buffer)?;
+                self.u64_serializer.serialize(c, buffer)?;
+            }
         }
 
         Ok(())
