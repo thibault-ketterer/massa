@@ -128,7 +128,16 @@ impl PeerDB {
                     .listeners
                     .clone()
                     .into_iter()
-                    .filter(|(addr, _)| addr.ip().to_canonical().is_global())
+                    .filter(|(addr, _)| {
+                        if cfg!(feature = "local_network") {
+                            match addr.ip().to_canonical() {
+                                std::net::IpAddr::V4(ip) => ip.is_global() || ip.is_private(),
+                                std::net::IpAddr::V6(ip) => ip.is_global() || ip.is_unique_local(),
+                            }
+                        } else {
+                            addr.ip().to_canonical().is_global()
+                        }
+                    })
                     .collect();
                 if listeners.is_empty() {
                     continue;

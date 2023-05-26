@@ -34,4 +34,5 @@ tempfile = "3.3"
 serial_test = "2.0.0"
 
 [features]
+local_network = []
 testing = ["massa_protocol_exports/testing", "tempfile", "massa_pool_exports/testing", "massa_consensus_exports/testing"]

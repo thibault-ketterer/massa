@@ -235,8 +235,18 @@ pub(crate) fn start_connectivity_thread(
                                     //TODO: Adapt for multiple listeners
                                     let (addr, _) = peer_info.last_announce.listeners.iter().next().unwrap();
                                     let canonical_ip = addr.ip().to_canonical();
-                                    if !canonical_ip.is_global()  {
-                                        continue;
+                                    if cfg!(feature = "local_network") {
+                                        let allowed = match canonical_ip {
+                                            std::net::IpAddr::V4(ip) => ip.is_global() || ip.is_private(),
+                                            std::net::IpAddr::V6(ip) => ip.is_global() || ip.is_unique_local()
+                                        };
+                                        if !allowed {
+                                            continue;
+                                        }
+                                    } else {
+                                        if !canonical_ip.is_global()  {
+                                            continue;
+                                        }
                                     }
                                     // Check if the peer is in a category and we didn't reached out target yet
                                     let mut category_found = None;

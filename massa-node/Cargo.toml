@@ -58,5 +58,6 @@ ctrlc = "3.2.5"
 beta = []
 deadlock_detection = []
 bootstrap_server = []
+local_network = ["massa_protocol_worker/local_network"]
 sandbox = ["massa_bootstrap/sandbox", "massa_consensus_worker/sandbox", "massa_execution_worker/sandbox", "massa_final_state/sandbox", "massa_models/sandbox"]
 create_snapshot = ["massa_final_state/create_snapshot"]
