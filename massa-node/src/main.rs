@@ -521,6 +521,9 @@ async fn launch(
         broadcast_blocks_capacity: SETTINGS.consensus.broadcast_blocks_capacity,
         broadcast_filled_blocks_capacity: SETTINGS.consensus.broadcast_filled_blocks_capacity,
         last_start_period: final_state.read().last_start_period,
+        force_keep_final_periods_without_ops: SETTINGS
+            .consensus
+            .force_keep_final_periods_without_ops,
     };
 
     let (consensus_event_sender, consensus_event_receiver) =
