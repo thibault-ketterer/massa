@@ -2986,7 +2986,7 @@ dependencies = [
  "massa_versioning",
  "mockall",
  "nom",
- "peernet 0.1.0 (git+https://github.com/massalabs/PeerNet?rev=bf8adf5)",
+ "peernet 0.1.0 (git+https://github.com/massalabs/PeerNet?branch=use_stream_limiter)",
  "serde",
  "serde_json",
  "tempfile",
