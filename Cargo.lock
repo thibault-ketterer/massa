@@ -2379,7 +2379,7 @@ dependencies = [
  "massa_wallet",
  "parking_lot",
  "paw",
- "peernet",
+ "peernet 0.1.0 (git+https://github.com/massalabs/PeerNet?rev=bf8adf5)",
  "serde",
  "structopt",
  "tokio",
@@ -2986,7 +2986,7 @@ dependencies = [
  "massa_versioning",
  "mockall",
  "nom",
- "peernet",
+ "peernet 0.1.0 (git+https://github.com/massalabs/PeerNet?rev=bf8adf5)",
  "serde",
  "serde_json",
  "tempfile",
@@ -3012,7 +3012,7 @@ dependencies = [
  "nom",
  "num_enum",
  "parking_lot",
- "peernet",
+ "peernet 0.1.0 (git+https://github.com/massalabs/PeerNet?branch=use_stream_limiter)",
  "rand 0.8.5",
  "rayon",
  "schnellru",
@@ -3600,6 +3600,22 @@ name = "peeking_take_while"
 version = "0.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "19b17cddbe7ec3f8bc800887bab5e717348c95ea2ca0b1bf0837fb964dc67099"
+
+[[package]]
+name = "peernet"
+version = "0.1.0"
+source = "git+https://github.com/massalabs/PeerNet?branch=use_stream_limiter#7c2c289c7dec6821bba9540cb71e7d9638ac508d"
+dependencies = [
+ "crossbeam",
+ "enum_delegate",
+ "mio",
+ "parking_lot",
+ "quiche",
+ "rand 0.8.5",
+ "serde",
+ "stream_limiter",
+ "thiserror",
+]
 
 [[package]]
 name = "peernet"

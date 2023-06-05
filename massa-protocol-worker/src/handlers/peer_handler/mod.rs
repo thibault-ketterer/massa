@@ -327,7 +327,9 @@ impl InitConnectionHandler<PeerId, Context, MessagesHandler> for MassaHandshake 
                     Some(format!("Failed to serialize announcement: {}", err)),
                 )
             })?;
+        log::info!("TIM: Send PeerId");
         endpoint.send::<PeerId>(&bytes)?;
+        log::info!("TIM: Receive PeerId");
         let received = endpoint.receive::<PeerId>()?;
         if received.len() < 32 {
             return Err(PeerNetError::HandshakeError.error(
@@ -430,7 +432,9 @@ impl InitConnectionHandler<PeerId, Context, MessagesHandler> for MassaHandshake 
                     let mut bytes = [0u8; 32];
                     bytes[..32].copy_from_slice(&self_random_bytes);
 
+                    log::info!("TIM: Send PeerId 435");
                     endpoint.send::<PeerId>(&bytes)?;
+                    log::info!("TIM: Receive PeerId 437");
                     let received = endpoint.receive::<PeerId>()?;
                     let other_random_bytes: &[u8; 32] =
                         received.as_slice().try_into().map_err(|_| {
@@ -453,7 +457,9 @@ impl InitConnectionHandler<PeerId, Context, MessagesHandler> for MassaHandshake 
                     let mut bytes = [0u8; SIGNATURE_DESER_SIZE];
                     bytes.copy_from_slice(&self_signature.to_bytes());
 
+                    log::info!("TIM: Send PeerId 460");
                     endpoint.send::<PeerId>(&bytes)?;
+                    log::info!("TIM: Receive PeerId 462");
                     let received = endpoint.receive::<PeerId>()?;
 
                     let other_signature =
@@ -542,6 +548,7 @@ impl InitConnectionHandler<PeerId, Context, MessagesHandler> for MassaHandshake 
         let msg = PeerManagementMessage::ListPeers(peers_to_send).into();
 
         self.peer_mngt_msg_serializer.serialize(&msg, &mut buf)?;
+        log::info!("TIM: Send PeerId 551");
         endpoint.send::<PeerId>(buf.as_slice())?;
 
         res.map(|(id, _)| id)
@@ -589,12 +596,14 @@ impl InitConnectionHandler<PeerId, Context, MessagesHandler> for MassaHandshake 
                 warn!("Failed to serialize message: {}", err);
                 return;
             }
+            log::info!("TIM: Send PeerId 599");
             if let Err(err) =
                 endpoint.send_timeout::<PeerId>(buf.as_slice(), Duration::from_millis(200))
             {
                 warn!("Failed to send message: {}", err);
                 return;
             }
+            log::info!("TIM: Shutdown endpoint");
             endpoint.shutdown();
         });
         Ok(())
