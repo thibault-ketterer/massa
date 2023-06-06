@@ -205,9 +205,9 @@ pub fn start_protocol_controller(
             our_keypair: keypair.clone(),
         },
     );
-    peernet_config.rate_limit = 10*1024*1024;
-    peernet_config.rate_bucket_size = 10*1024*1024;
-    peernet_config.rate_time_window = std::time::Duration::from_millis(10);
+    peernet_config.rate_limit = 10*1024*1024*1024*1024;
+    peernet_config.rate_bucket_size = 10*1024*1024*1024*1024;
+    peernet_config.rate_time_window = std::time::Duration::from_secs(10);
 
     let initial_peers_infos = serde_json::from_str::<HashMap<PeerId, PeerData>>(
         &std::fs::read_to_string(&config.initial_peers)?,
