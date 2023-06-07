@@ -1,11 +1,11 @@
 use crate::messages::{BootstrapClientMessage, BootstrapServerMessage};
 use crate::settings::{BootstrapClientConfig, BootstrapSrvBindCfg};
-use crate::BootstrapConfig;
 use crate::{
     bindings::{BootstrapClientBinder, BootstrapServerBinder},
     tests::tools::get_bootstrap_config,
     BootstrapPeers,
 };
+use crate::{BootstrapConfig, BootstrapError};
 use massa_models::config::{
     BOOTSTRAP_RANDOMNESS_SIZE_BYTES, CONSENSUS_BOOTSTRAP_PART_SIZE, ENDORSEMENT_COUNT,
     MAX_ADVERTISE_LENGTH, MAX_ASYNC_MESSAGE_DATA, MAX_ASYNC_POOL_LENGTH,
@@ -23,6 +23,7 @@ use massa_protocol_exports::{PeerId, TransportType};
 use massa_signature::{KeyPair, PublicKey};
 use massa_time::MassaTime;
 use std::collections::HashMap;
+use std::io::{ErrorKind, Write};
 use std::net::TcpStream;
 use std::str::FromStr;
 
@@ -482,5 +483,66 @@ fn test_binders_try_double_send_client_works() {
         .unwrap();
 
     server_thread.join().unwrap();
+    client_thread.join().unwrap();
+}
+
+/// Ensure that when the client sends a partial message for handshake, the server fail-fast
+#[test]
+fn test_binders_client_partial_handshake() {
+    let (bootstrap_config, server_keypair): &(BootstrapConfig, KeyPair) = &BOOTSTRAP_CONFIG_KEYPAIR;
+
+    let server = std::net::TcpListener::bind("localhost:0").unwrap();
+    let addr = server.local_addr().unwrap();
+    let mut client = std::net::TcpStream::connect(addr).unwrap();
+    let server = server.accept().unwrap();
+    let mut server = BootstrapServerBinder::new(
+        server.0,
+        server_keypair.clone(),
+        BootstrapSrvBindCfg {
+            max_bytes_read_write: f64::INFINITY,
+            thread_count: THREAD_COUNT,
+            max_datastore_key_length: MAX_DATASTORE_KEY_LENGTH,
+            randomness_size_bytes: BOOTSTRAP_RANDOMNESS_SIZE_BYTES,
+            consensus_bootstrap_part_size: CONSENSUS_BOOTSTRAP_PART_SIZE,
+            write_error_timeout: MassaTime::from_millis(1000),
+        },
+    );
+
+    let server_thread = std::thread::Builder::new()
+        .name("test_buinders_double_send_client_works::server_thread".to_string())
+        .spawn({
+            move || {
+                // Test message 1
+                let mut listeners: HashMap<std::net::SocketAddr, TransportType> =
+                    HashMap::default();
+                listeners.insert(
+                    bootstrap_config.bootstrap_list[0].0.clone(),
+                    TransportType::Tcp,
+                );
+                let version: Version = Version::from_str("TEST.1.10").unwrap();
+
+                server.handshake_timeout(version, None)
+            }
+        })
+        .unwrap();
+
+    let client_thread = std::thread::Builder::new()
+        .name("test_buinders_double_send_client_works::client_thread".to_string())
+        .spawn({
+            move || {
+                client.write(b"too short").unwrap();
+            }
+        })
+        .unwrap();
+
+    let hs_res = server_thread.join().unwrap().unwrap_err();
+
+    match hs_res {
+        BootstrapError::IoError(err) => {
+            assert_eq!(err.kind(), ErrorKind::UnexpectedEof);
+            assert_eq!(err.to_string(), "failed to fill whole buffer")
+        }
+        _ => panic!("Bad error: {:?}", hs_res),
+    }
     client_thread.join().unwrap();
 }

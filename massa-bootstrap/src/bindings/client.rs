@@ -64,6 +64,7 @@ impl BootstrapClientBinder {
                 vec![0u8; version_ser.len() + self.cfg.randomness_size_bytes];
             version_random_bytes[..version_ser.len()].clone_from_slice(&version_ser);
             StdRng::from_entropy().fill_bytes(&mut version_random_bytes[version_ser.len()..]);
+            dbg!(&version_random_bytes.len());
             self.duplex.write_all(&version_random_bytes)?;
             Hash::compute_from(&version_random_bytes)
         };
