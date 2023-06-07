@@ -546,3 +546,102 @@ fn test_binders_client_partial_handshake() {
     }
     client_thread.join().unwrap();
 }
+
+/// The server and the client will handshake, but then client will send a message of the wrong len
+#[test]
+fn test_binders_cutoff() {
+    let (bootstrap_config, server_keypair): &(BootstrapConfig, KeyPair) = &BOOTSTRAP_CONFIG_KEYPAIR;
+    let server = std::net::TcpListener::bind("localhost:0").unwrap();
+    let addr = server.local_addr().unwrap();
+    let mut client = std::net::TcpStream::connect(addr).unwrap();
+    let server = server.accept().unwrap();
+
+    let mut server = BootstrapServerBinder::new(
+        server.0,
+        server_keypair.clone(),
+        BootstrapSrvBindCfg {
+            max_bytes_read_write: f64::INFINITY,
+            thread_count: THREAD_COUNT,
+            max_datastore_key_length: MAX_DATASTORE_KEY_LENGTH,
+            randomness_size_bytes: BOOTSTRAP_RANDOMNESS_SIZE_BYTES,
+            consensus_bootstrap_part_size: CONSENSUS_BOOTSTRAP_PART_SIZE,
+            write_error_timeout: MassaTime::from_millis(1000),
+        },
+    );
+    let mut client_binding = BootstrapClientBinder::test_default(
+        client.try_clone().unwrap(),
+        bootstrap_config.bootstrap_list[0].1.get_public_key(),
+    );
+
+    let peer_id1 = PeerId::from_public_key(KeyPair::generate(0).unwrap().get_public_key());
+
+    let server_thread = std::thread::Builder::new()
+        .name("test_binders::server_thread".to_string())
+        .spawn({
+            let peer_id1 = peer_id1.clone();
+            move || {
+                // Test message 1
+                let mut listeners = HashMap::default();
+                listeners.insert(
+                    bootstrap_config.bootstrap_list[0].0.clone(),
+                    TransportType::Tcp,
+                );
+                let vector_peers = vec![(peer_id1, listeners)];
+                let test_peers_message = BootstrapServerMessage::BootstrapPeers {
+                    peers: BootstrapPeers(vector_peers.clone()),
+                };
+
+                let version: Version = Version::from_str("TEST.1.10").unwrap();
+
+                server.handshake_timeout(version, None).unwrap();
+
+                server
+                    .send_timeout(test_peers_message.clone(), None)
+                    .unwrap();
+
+                server.next_timeout(None)
+            }
+        })
+        .unwrap();
+
+    let client_thread = std::thread::Builder::new()
+        .name("test_binders::client_thread".to_string())
+        .spawn({
+            let peer_id1 = peer_id1.clone();
+            move || {
+                // Test message 1
+                let mut listeners = HashMap::default();
+                listeners.insert(
+                    bootstrap_config.bootstrap_list[0].0.clone(),
+                    TransportType::Tcp,
+                );
+                let vector_peers = vec![(peer_id1, listeners)];
+
+                let version: Version = Version::from_str("TEST.1.10").unwrap();
+
+                client_binding.handshake(version).unwrap();
+                let message = client_binding.next_timeout(None).unwrap();
+                match message {
+                    BootstrapServerMessage::BootstrapPeers { peers } => {
+                        assert_eq!(vector_peers, peers.0);
+                    }
+                    _ => panic!("Bad message receive: Expected a peers list message"),
+                }
+                // the connection can exchange messages... now let's partial-send
+
+                client.write(b"too short").unwrap();
+            }
+        })
+        .unwrap();
+
+    let message_res = server_thread.join().unwrap();
+    client_thread.join().unwrap();
+
+    match message_res.unwrap_err() {
+        BootstrapError::IoError(err) => {
+            assert_eq!(err.kind(), ErrorKind::UnexpectedEof);
+            assert_eq!(err.to_string(), "failed to fill whole buffer")
+        }
+        err => panic!("Bad error: {:?}", err),
+    }
+}
