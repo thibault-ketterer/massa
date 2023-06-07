@@ -157,7 +157,7 @@ fn test_binders() {
         .unwrap();
 
     let client_thread = std::thread::Builder::new()
-        .name("test_binders::server_thread".to_string())
+        .name("test_binders::client_thread".to_string())
         .spawn({
             let peer_id1 = peer_id1.clone();
             let peer_id2 = peer_id2.clone();
