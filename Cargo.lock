@@ -2390,7 +2390,7 @@ dependencies = [
 [[package]]
 name = "massa-sc-runtime"
 version = "0.10.0"
-source = "git+https://github.com/massalabs/massa-sc-runtime?branch=main#4074cc64d32d9b1104f7c1d5c9f62844dff82ed1"
+source = "git+https://github.com/massalabs/massa-sc-runtime?branch=main#7c11e4ba4448afa36040ee09549fd64bc5391312"
 dependencies = [
  "anyhow",
  "as-ffi-bindings",
@@ -2405,6 +2405,7 @@ dependencies = [
  "parking_lot",
  "prost",
  "prost-build",
+ "prost-types",
  "rand 0.8.5",
  "regex",
  "serde",
@@ -3604,7 +3605,7 @@ checksum = "19b17cddbe7ec3f8bc800887bab5e717348c95ea2ca0b1bf0837fb964dc67099"
 [[package]]
 name = "peernet"
 version = "0.1.0"
-source = "git+https://github.com/massalabs/PeerNet?branch=use_stream_limiter#0bb0b118f9fba14f70e468e6b444d44d82f46542"
+source = "git+https://github.com/massalabs/PeerNet?branch=use_stream_limiter#9607850126949a1c62d098ca1132aa81952ff0c7"
 dependencies = [
  "crossbeam",
  "enum_delegate",
@@ -3880,9 +3881,9 @@ dependencies = [
 
 [[package]]
 name = "prost"
-version = "0.11.8"
+version = "0.11.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e48e50df39172a3e7eb17e14642445da64996989bc212b583015435d39a58537"
+checksum = "0b82eaa1d779e9a4bc1c3217db8ffbeabaae1dca241bf70183242128d48681cd"
 dependencies = [
  "bytes",
  "prost-derive",
@@ -3890,9 +3891,9 @@ dependencies = [
 
 [[package]]
 name = "prost-build"
-version = "0.11.8"
+version = "0.11.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2c828f93f5ca4826f97fedcbd3f9a536c16b12cff3dbbb4a007f932bbad95b12"
+checksum = "119533552c9a7ffacc21e099c24a0ac8bb19c2a2a3f363de84cd9b844feab270"
 dependencies = [
  "bytes",
  "heck 0.4.1",
@@ -3925,9 +3926,9 @@ dependencies = [
 
 [[package]]
 name = "prost-types"
-version = "0.11.8"
+version = "0.11.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "379119666929a1afd7a043aa6cf96fa67a6dce9af60c88095a4686dbce4c9c88"
+checksum = "213622a1460818959ac1181aaeb2dc9c7f63df720db7d788b3e24eacd1983e13"
 dependencies = [
  "prost",
 ]
