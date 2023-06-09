@@ -3604,7 +3604,7 @@ checksum = "19b17cddbe7ec3f8bc800887bab5e717348c95ea2ca0b1bf0837fb964dc67099"
 [[package]]
 name = "peernet"
 version = "0.1.0"
-source = "git+https://github.com/massalabs/PeerNet?branch=use_stream_limiter#7c2c289c7dec6821bba9540cb71e7d9638ac508d"
+source = "git+https://github.com/massalabs/PeerNet?branch=use_stream_limiter#0bb0b118f9fba14f70e468e6b444d44d82f46542"
 dependencies = [
  "crossbeam",
  "enum_delegate",
@@ -3613,7 +3613,7 @@ dependencies = [
  "quiche",
  "rand 0.8.5",
  "serde",
- "stream_limiter",
+ "stream_limiter 2.0.0 (git+https://github.com/massalabs/stream_limiter?branch=fix_stream_limiter_network)",
  "thiserror",
 ]
 
@@ -3629,7 +3629,7 @@ dependencies = [
  "quiche",
  "rand 0.8.5",
  "serde",
- "stream_limiter",
+ "stream_limiter 2.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "thiserror",
 ]
 
@@ -4768,6 +4768,11 @@ name = "stream_limiter"
 version = "2.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "92b85d49eee44700a8dc9a3e2d316e8e1f7d661d3eccd606ad9d02e9969e04bc"
+
+[[package]]
+name = "stream_limiter"
+version = "2.0.0"
+source = "git+https://github.com/massalabs/stream_limiter?branch=fix_stream_limiter_network#807cd04b42681a9796f3ab63f6e992bcdd17e6df"
 
 [[package]]
 name = "strsim"
