@@ -119,7 +119,7 @@ peer_list_send_timeout = 100
 max_in_connection_overflow = 100
 max_bytes_read = 20000000.0
 max_bytes_write = 20000000.0
-routable_ip = "62.171.147.201"
+routable_ip = "37.187.156.118"
 
 [bootstrap]
 bootstrap_list = [ [ "149.202.84.7:31245", "N1kKfgrCveVnosUkxTzaBw5cf9f2cbTvK3R5Ssb2Pf76au8xwmH",], [ "149.202.84.39:31245", "N12sNdL7YwSawpnJrk9XCWDjKbgfNamAobp62AX5qfkgpBkGh2wC",], [ "37.187.156.118:31245", "N1NnuSW48GKGaYZamAVKXfXbbnt3StxWoHpYtBZSJvY9e8U1BTC",], [ "62.171.147.201:31245", "N1mvXmT6mWg7BrqKRSYzC8KzQDgbnRrDV8qbAxVNRWXd8jC4jFC",], [ "62.171.147.202:31245", "N1eX178QZUfuwgUiyxreZk6ib2cv7oNjFAZr5m6Zv29Pw4q7hui",], [ "62.171.141.168:31245", "N1demmTtaBthDiZvcemCzPq2QXXzT19bK1WnXonxzYLsnwL1e29",],]
