@@ -43,7 +43,7 @@ max_final_events = 10000
 readonly_queue_length = 10
 cursor_delay = 2000
 stats_time_window_duration = 60000
-max_read_only_gas = 100000000
+max_read_only_gas = 4294967296
 abi_gas_costs_file = "base_config/gas_costs/abi_gas_costs.json"
 wasm_gas_costs_file = "base_config/gas_costs/wasm_gas_costs.json"
 initial_vesting_path = "base_config/initial_vesting.json"
@@ -119,6 +119,7 @@ peer_list_send_timeout = 100
 max_in_connection_overflow = 100
 max_bytes_read = 20000000.0
 max_bytes_write = 20000000.0
+routable_ip = "37.187.156.118"
 
 [bootstrap]
 bootstrap_list = [ [ "149.202.84.7:31245", "N1kKfgrCveVnosUkxTzaBw5cf9f2cbTvK3R5Ssb2Pf76au8xwmH",], [ "149.202.84.39:31245", "N12sNdL7YwSawpnJrk9XCWDjKbgfNamAobp62AX5qfkgpBkGh2wC",], [ "37.187.156.118:31245", "N1NnuSW48GKGaYZamAVKXfXbbnt3StxWoHpYtBZSJvY9e8U1BTC",], [ "62.171.147.201:31245", "N1mvXmT6mWg7BrqKRSYzC8KzQDgbnRrDV8qbAxVNRWXd8jC4jFC",], [ "62.171.147.202:31245", "N1eX178QZUfuwgUiyxreZk6ib2cv7oNjFAZr5m6Zv29Pw4q7hui",], [ "62.171.141.168:31245", "N1demmTtaBthDiZvcemCzPq2QXXzT19bK1WnXonxzYLsnwL1e29",],]
@@ -157,14 +158,14 @@ initial_delay = 100
 staking_wallet_path = "config/staking_wallet.dat"
 
 [network.peer_types_config.Standard]
-target_out_connections = 10
-max_out_attempts = 10
-max_in_connections = 15
+target_out_connections = 3
+max_out_attempts = 3
+max_in_connections = 10
 
 [network.peer_types_config.Bootstrap]
-target_out_connections = 1
-max_out_attempts = 1
-max_in_connections = 1
+target_out_connections = 5
+max_out_attempts = 5
+max_in_connections = 5
 
 [network.peer_types_config.WhiteListed]
 target_out_connections = 2
