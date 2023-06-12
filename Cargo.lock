@@ -2927,6 +2927,7 @@ dependencies = [
  "massa_signature",
  "massa_storage",
  "massa_time",
+ "massa_wallet",
  "mockall",
  "num",
  "parking_lot",
